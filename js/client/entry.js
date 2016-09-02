@@ -1,6 +1,5 @@
 import PIXI from 'pixi.js'
 import * as util from './utilities'
-import SpatialHash from './spatialhash'
 
 util.ready(function(){
 

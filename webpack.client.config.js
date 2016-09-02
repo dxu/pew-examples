@@ -22,6 +22,13 @@ module.exports = {
       {
         test: /\.css$/,
         loader: "style!css"
+      },
+      // This applies the loader to all of your dependencies,
+      // and not any of the source files in your project:
+      // required to make pixi.js to work due to its glslify dependency
+      {
+        test: /node_modules/,
+        loader: 'ify'
       }
     ],
     // For pixi.js:
