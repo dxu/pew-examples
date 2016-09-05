@@ -24,49 +24,38 @@ canvas.addEventListener('click', function(evt) {
 })
 
 canvas.addEventListener('keydown', function(evt) {
-  console.log('yo')
-  console.log(evt.keyCode)
 
   switch (evt.keyCode)  {
     case util.keys.W:
-      speed.y = -5
+      zelda.velocity = Pew.constants.VELOCITY.N
       break
     case util.keys.A:
-      speed.x = -5
+      zelda.velocity = Pew.constants.VELOCITY.W
       break
     case util.keys.S:
-      speed.y = 5
+      zelda.velocity = Pew.constants.VELOCITY.S
       break
     case util.keys.D:
-      speed.x = 5
+      zelda.velocity = Pew.constants.VELOCITY.E
       break
     default:
       break
   }
 
 
-  console.log(speed)
-
   if (evt.keyCode === util.keys.A) {
 
   }
 })
 
-var speed = {
-  x: 0,
-  y: 0
-}
-
 canvas.addEventListener('keyup', function(evt) {
-  console.log('yo')
-  console.log(evt.keyCode)
 
   switch (evt.keyCode)  {
     case util.keys.W:
     case util.keys.A:
     case util.keys.S:
     case util.keys.D:
-      speed = {
+      zelda.velocity = {
         x: 0,
         y: 0
       }
@@ -74,7 +63,6 @@ canvas.addEventListener('keyup', function(evt) {
     default:
       break
   }
-  console.log(zelda.position.y,zelda.position.x)
 })
 
 
@@ -94,7 +82,7 @@ let uuidHasher = function() {
 
 }
 
-let hash = new SpatialHash()
+let hash = new Pew.SpatialHash()
 
 
 
@@ -102,18 +90,31 @@ let hash = new SpatialHash()
 PIXI.loader.add('zelda', './assets/img/zelda.gif')
   .add('heart', './assets/img/heart.png')
   .load(function (loader, resources) {
-    // This creates a texture from a 'zelda.png' image.
-    zelda = new PIXI.Sprite(resources.zelda.texture);
+
+    // create a pew gameobject
+    zelda = new Pew.GameObject({
+      position: {
+        x: 10,
+        y: 30
+      },
+      speed: {
+        x: 5,
+        y: 8
+      },
+      data: {
+        sprite: new PIXI.Sprite(resources.zelda.texture)
+      }
+    })
 
     // Setup the position and scale of the zelda
-    zelda.position.x = 400;
-    zelda.position.y = 300;
+    zelda.data.sprite.position.x = zelda.position.x;
+    zelda.data.sprite.position.y = zelda.position.x;
 
-    zelda.anchor.x = 0.5;
-    zelda.anchor.y = 0.5;
+    zelda.data.sprite.anchor.x = 0.5;
+    zelda.data.sprite.anchor.y = 0.5;
 
-    zelda.scale.x = 2;
-    zelda.scale.y = 2;
+    zelda.data.sprite.scale.x = 2;
+    zelda.data.sprite.scale.y = 2;
 
     for (var i=0; i<10; i++) {
       let heart = new PIXI.Sprite(resources.heart.texture);
@@ -125,7 +126,7 @@ PIXI.loader.add('zelda', './assets/img/zelda.gif')
     }
 
     // Add the zelda to the scene we are building.
-    stage.addChild(zelda);
+    stage.addChild(zelda.data.sprite);
 
     // kick off the animation loop (defined below)
     animate();
@@ -137,9 +138,10 @@ function animate() {
 
   // each frame we spin the zelda around a bit
   // zelda.rotation += 0.01;
-  console.log(speed)
-  zelda.position.y += 1 * speed.y;
-  zelda.position.x += 1 * speed.x;
+
+  // we subtract the y position to flip the axis
+  zelda.data.sprite.position.y -= zelda.velocity.y * zelda.speed.y;
+  zelda.data.sprite.position.x += zelda.velocity.x * zelda.speed.x;
   // zelda.position.y += 5
 
   // this is the main render call that makes pixi draw your container and its children.
