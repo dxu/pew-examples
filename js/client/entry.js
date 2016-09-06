@@ -42,14 +42,9 @@ canvas.addEventListener('keydown', function(evt) {
       break
   }
 
-
-  if (evt.keyCode === util.keys.A) {
-
-  }
 })
 
 canvas.addEventListener('keyup', function(evt) {
-
   switch (evt.keyCode)  {
     case util.keys.W:
     case util.keys.A:
@@ -65,26 +60,10 @@ canvas.addEventListener('keyup', function(evt) {
   }
 })
 
-
 // You need to create a root container that will hold the scene you want to draw.
 var stage = new PIXI.Container();
 
-let comparator = function() {
-
-}
-
-let bucketHasher = function(item) {
-  return
-
-}
-
-let uuidHasher = function() {
-
-}
-
-let hash = new Pew.SpatialHash()
-
-
+window.spatialHash = new Pew.SpatialHash()
 
 // load the texture we need
 PIXI.loader.add('zelda', './assets/img/zelda.gif')
@@ -101,6 +80,10 @@ PIXI.loader.add('zelda', './assets/img/zelda.gif')
         x: 5,
         y: 8
       },
+      size: {
+        width: 50,
+        height: 150
+      },
       data: {
         sprite: new PIXI.Sprite(resources.zelda.texture)
       }
@@ -108,29 +91,80 @@ PIXI.loader.add('zelda', './assets/img/zelda.gif')
 
     // Setup the position and scale of the zelda
     zelda.data.sprite.position.x = zelda.position.x;
-    zelda.data.sprite.position.y = zelda.position.x;
+    zelda.data.sprite.position.y = zelda.position.y;
 
     zelda.data.sprite.anchor.x = 0.5;
     zelda.data.sprite.anchor.y = 0.5;
 
-    zelda.data.sprite.scale.x = 2;
-    zelda.data.sprite.scale.y = 2;
+    // zelda.data.sprite.scale.x = 2;
+    // zelda.data.sprite.scale.y = 2;
 
-    for (var i=0; i<10; i++) {
-      let heart = new PIXI.Sprite(resources.heart.texture);
-      heart.position.x = Math.random() * 800;
-      heart.position.y = Math.random() * 600;
-      heart.anchor.x = 0.5;
-      heart.anchor.y = 0.5;
-      stage.addChild(heart);
-    }
+    console.log(zelda.data.sprite.width)
+    console.log(zelda.data.sprite.height)
+
+    zelda.data.sprite.scale.x = zelda.size.width / zelda.data.sprite.width;
+    zelda.data.sprite.scale.y = zelda.size.height / zelda.data.sprite.height;
 
     // Add the zelda to the scene we are building.
     stage.addChild(zelda.data.sprite);
+    items.push(zelda)
+
+    for (var i=0; i<1; i++) {
+
+      let heart = new Pew.GameObject({
+        position: {
+          x: Math.random() * 800,
+          y: Math.random() * 600
+        },
+        speed: {
+          x: 5,
+          y: 8
+        },
+        size: {
+          width: 50,
+          height: 50
+        },
+        data: {
+          sprite: new PIXI.Sprite(resources.heart.texture)
+        }
+      })
+
+      heart.data.sprite.anchor.x = 0.5;
+      heart.data.sprite.anchor.y = 0.5;
+
+      heart.data.sprite.scale.x = heart.size.width / heart.data.sprite.width;
+      heart.data.sprite.scale.y = heart.size.height / heart.data.sprite.height;
+
+      heart.data.sprite.position.x = heart.position.x;
+      heart.data.sprite.position.y = heart.position.y;
+      stage.addChild(heart.data.sprite);
+      items.push(heart)
+    }
 
     // kick off the animation loop (defined below)
     animate();
 });
+
+var items = []
+
+
+// this assumes object is centered
+function defaultTestCollide(gob1, gob2) {
+  let l1 = gob1.position.x - gob1.size.width / 2,
+      r1 = l1 + gob1.size.width,
+      t1 = gob1.position.y - gob1.size.height / 2,
+      b1 = t1 + gob1.size.height,
+      l2 = gob2.position.x - gob2.size.width / 2,
+      r2 = l2 + gob2.size.width,
+      t2 = gob2.position.y - gob2.size.height / 2,
+      b2 = t2 + gob2.size.height
+
+      return (l1 > l2 && l1 < r2 && t1 > t2 && t1 < b2) ||
+             (l1 > l2 && l1 < r2 && b1 > t2 && b1 < b2) ||
+             (r1 > l2 && r1 < r2 && t1 > t2 && t1 < b2) ||
+             (r1 > l2 && r1 < r2 && b1 > t2 && b1 < b2)
+}
+
 
 function animate() {
   // start the timer for the next animation loop
@@ -140,9 +174,30 @@ function animate() {
   // zelda.rotation += 0.01;
 
   // we subtract the y position to flip the axis
-  zelda.data.sprite.position.y -= zelda.velocity.y * zelda.speed.y;
-  zelda.data.sprite.position.x += zelda.velocity.x * zelda.speed.x;
+
+
+  zelda.position.y -= zelda.velocity.y * zelda.speed.y;
+  zelda.position.x += zelda.velocity.x * zelda.speed.x;
+
+  zelda.data.sprite.position.y = zelda.position.y;
+  zelda.data.sprite.position.x = zelda.position.x;
   // zelda.position.y += 5
+  //
+  //
+
+
+
+  for (let i=0; i<items.length; i++) {
+    for (let j=1; j<items.length; j++) {
+      if (defaultTestCollide(items[i], items[j])) {
+        console.log('hi')
+
+      }
+
+    }
+  }
+
+
 
   // this is the main render call that makes pixi draw your container and its children.
   renderer.render(stage);
