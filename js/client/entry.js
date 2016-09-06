@@ -99,15 +99,18 @@ PIXI.loader.add('zelda', './assets/img/zelda.gif')
     // zelda.data.sprite.scale.x = 2;
     // zelda.data.sprite.scale.y = 2;
 
-    console.log(zelda.data.sprite.width)
-    console.log(zelda.data.sprite.height)
+    // console.log(zelda.data.sprite.width)
+    // console.log(zelda.data.sprite.height)
 
     zelda.data.sprite.scale.x = zelda.size.width / zelda.data.sprite.width;
     zelda.data.sprite.scale.y = zelda.size.height / zelda.data.sprite.height;
 
     // Add the zelda to the scene we are building.
     stage.addChild(zelda.data.sprite);
-    items.push(zelda)
+
+    spatialHash.add(zelda)
+
+    // items.push(zelda)
 
     for (var i=0; i<1; i++) {
 
@@ -138,7 +141,8 @@ PIXI.loader.add('zelda', './assets/img/zelda.gif')
       heart.data.sprite.position.x = heart.position.x;
       heart.data.sprite.position.y = heart.position.y;
       stage.addChild(heart.data.sprite);
-      items.push(heart)
+      spatialHash.add(heart)
+      // items.push(heart)
     }
 
     // kick off the animation loop (defined below)
@@ -147,23 +151,6 @@ PIXI.loader.add('zelda', './assets/img/zelda.gif')
 
 var items = []
 
-
-// this assumes object is centered
-function defaultTestCollide(gob1, gob2) {
-  let l1 = gob1.position.x - gob1.size.width / 2,
-      r1 = l1 + gob1.size.width,
-      t1 = gob1.position.y - gob1.size.height / 2,
-      b1 = t1 + gob1.size.height,
-      l2 = gob2.position.x - gob2.size.width / 2,
-      r2 = l2 + gob2.size.width,
-      t2 = gob2.position.y - gob2.size.height / 2,
-      b2 = t2 + gob2.size.height
-
-      return (l1 > l2 && l1 < r2 && t1 > t2 && t1 < b2) ||
-             (l1 > l2 && l1 < r2 && b1 > t2 && b1 < b2) ||
-             (r1 > l2 && r1 < r2 && t1 > t2 && t1 < b2) ||
-             (r1 > l2 && r1 < r2 && b1 > t2 && b1 < b2)
-}
 
 
 function animate() {
@@ -175,27 +162,34 @@ function animate() {
 
   // we subtract the y position to flip the axis
 
+  if (zelda.velocity.y || zelda.velocity.x) {
+    zelda.position.y -= zelda.velocity.y * zelda.speed.y;
+    zelda.position.x += zelda.velocity.x * zelda.speed.x;
 
-  zelda.position.y -= zelda.velocity.y * zelda.speed.y;
-  zelda.position.x += zelda.velocity.x * zelda.speed.x;
+    zelda.data.sprite.position.y = zelda.position.y;
+    zelda.data.sprite.position.x = zelda.position.x;
 
-  zelda.data.sprite.position.y = zelda.position.y;
-  zelda.data.sprite.position.x = zelda.position.x;
+    spatialHash.add(zelda)
+
+  }
+
+
+
   // zelda.position.y += 5
   //
   //
 
 
 
-  for (let i=0; i<items.length; i++) {
-    for (let j=1; j<items.length; j++) {
-      if (defaultTestCollide(items[i], items[j])) {
-        console.log('hi')
+  // for (let i=0; i<items.length; i++) {
+  //   for (let j=1; j<items.length; j++) {
+  //     if (defaultTestCollide(items[i], items[j])) {
+  //       console.log('hi')
 
-      }
+  //     }
 
-    }
-  }
+  //   }
+  // }
 
 
 
