@@ -3,6 +3,8 @@ import * as util from './utilities'
 
 util.ready(function(){
 
+const TILESIZE = 100
+
 const canvas = document.getElementById('canvas')
 // You can use either `new PIXI.WebGLRenderer`, `new PIXI.CanvasRenderer`, or `PIXI.autoDetectRenderer`
 // which will try to choose the best renderer for the environment you are in.
@@ -61,7 +63,8 @@ canvas.addEventListener('keyup', function(evt) {
 })
 
 // You need to create a root container that will hold the scene you want to draw.
-var stage = new PIXI.Container();
+var stage = new PIXI.Container()
+
 
 window.spatialHash = new Pew.SpatialHash()
 
@@ -73,8 +76,8 @@ PIXI.loader.add('zelda', './assets/img/zelda.gif')
     // create a pew gameobject
     zelda = new Pew.GameObject({
       position: {
-        x: 10,
-        y: 30
+        x: 100,
+        y: 100
       },
       speed: {
         x: 5,
@@ -93,8 +96,7 @@ PIXI.loader.add('zelda', './assets/img/zelda.gif')
     zelda.data.sprite.position.x = zelda.position.x;
     zelda.data.sprite.position.y = zelda.position.y;
 
-    zelda.data.sprite.anchor.x = 0.5;
-    zelda.data.sprite.anchor.y = 0.5;
+    zelda.data.sprite.anchor.set(0.5, 0.5);
 
     // zelda.data.sprite.scale.x = 2;
     // zelda.data.sprite.scale.y = 2;
@@ -132,8 +134,7 @@ PIXI.loader.add('zelda', './assets/img/zelda.gif')
         }
       })
 
-      heart.data.sprite.anchor.x = 0.5;
-      heart.data.sprite.anchor.y = 0.5;
+      heart.data.sprite.anchor.set(0.5, 0.5);
 
       heart.data.sprite.scale.x = heart.size.width / heart.data.sprite.width;
       heart.data.sprite.scale.y = heart.size.height / heart.data.sprite.height;
@@ -144,14 +145,36 @@ PIXI.loader.add('zelda', './assets/img/zelda.gif')
       spatialHash.add(heart)
       // items.push(heart)
     }
+    drawGrid(TILESIZE, stage)
 
     // kick off the animation loop (defined below)
     animate();
+
 });
 
 var items = []
 
+// draws a grid of given tilesize
+function drawGrid(tilesize, stage) {
+  let xSize = renderer.view.width
+  let ySize = renderer.view.height
 
+  console.log(xSize, ySize)
+  var graphics = new PIXI.Graphics()
+  graphics.moveTo(0, 0)
+  graphics.lineStyle(1, 0x336699, 1)
+
+  for (let i=0; i<=xSize; i+=tilesize) {
+    graphics.moveTo(i, 0)
+    graphics.lineTo(i, ySize)
+  }
+  for (let i=0; i<ySize; i+=tilesize) {
+    graphics.moveTo(0, i)
+    graphics.lineTo(xSize, i)
+  }
+
+  stage.addChild(graphics)
+}
 
 function animate() {
   // start the timer for the next animation loop
