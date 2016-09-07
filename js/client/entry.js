@@ -66,7 +66,7 @@ canvas.addEventListener('keyup', function(evt) {
 var stage = new PIXI.Container()
 
 
-window.spatialHash = new Pew.SpatialHash()
+window.spatialHash = new Pew.SpatialHash(TILESIZE)
 
 // load the texture we need
 PIXI.loader.add('zelda', './assets/img/zelda.gif')
