@@ -1,4 +1,3 @@
-import PIXI from 'pixi.js'
 import * as util from './utilities'
 
 util.ready(function(){
