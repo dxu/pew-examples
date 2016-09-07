@@ -93,23 +93,16 @@ PIXI.loader.add('zelda', './assets/img/zelda.gif')
     })
 
     // Setup the position and scale of the zelda
-    zelda.data.sprite.position.x = zelda.position.x;
-    zelda.data.sprite.position.y = zelda.position.y;
+    zelda.data.sprite.position.set(zelda.position.x, zelda.position.y);
 
     zelda.data.sprite.anchor.set(0.5, 0.5);
 
-    // zelda.data.sprite.scale.x = 2;
-    // zelda.data.sprite.scale.y = 2;
-
-    // console.log(zelda.data.sprite.width)
-    // console.log(zelda.data.sprite.height)
-
-    zelda.data.sprite.scale.x = zelda.size.width / zelda.data.sprite.width;
-    zelda.data.sprite.scale.y = zelda.size.height / zelda.data.sprite.height;
+    zelda.data.sprite.scale.set(zelda.size.width / zelda.data.sprite.width, zelda.size.height / zelda.data.sprite.height);
 
     // Add the zelda to the scene we are building.
     stage.addChild(zelda.data.sprite);
 
+    // update the spatialhash
     spatialHash.add(zelda)
 
     // items.push(zelda)
@@ -193,7 +186,6 @@ function animate() {
     zelda.data.sprite.position.x = zelda.position.x;
 
     spatialHash.add(zelda)
-
   }
 
 
