@@ -22,8 +22,6 @@ canvas.focus()
 var stage = new PIXI.Container()
 
 
-
-
 window.spatialHash = new Pew.SpatialHash(TILESIZE)
 
 // load the texture we need
@@ -76,8 +74,8 @@ PIXI.loader.add('zelda', './assets/img/zelda.gif')
 
 
 
-    // create a pew gameobject
-    zelda = new Pew.GameObject({
+    // create a pew gob
+    zelda = new Pew.Gob({
       position: {
         x: 100,
         y: 100
@@ -112,7 +110,7 @@ PIXI.loader.add('zelda', './assets/img/zelda.gif')
 
     for (var i=0; i<1; i++) {
 
-      let heart = new Pew.GameObject({
+      let heart = new Pew.Gob({
         position: {
           x: Math.random() * 800,
           y: Math.random() * 600
