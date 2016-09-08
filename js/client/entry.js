@@ -18,51 +18,10 @@ renderer.backgroundColor = 0xFFFFFF;
 
 canvas.focus()
 
-canvas.addEventListener('click', function(evt) {
-  if (this !== document.activeElement) {
-    canvas.focus()
-  }
-})
-
-canvas.addEventListener('keydown', function(evt) {
-
-  switch (evt.keyCode)  {
-    case util.keys.W:
-      zelda.velocity = Pew.constants.VELOCITY.N
-      break
-    case util.keys.A:
-      zelda.velocity = Pew.constants.VELOCITY.W
-      break
-    case util.keys.S:
-      zelda.velocity = Pew.constants.VELOCITY.S
-      break
-    case util.keys.D:
-      zelda.velocity = Pew.constants.VELOCITY.E
-      break
-    default:
-      break
-  }
-
-})
-
-canvas.addEventListener('keyup', function(evt) {
-  switch (evt.keyCode)  {
-    case util.keys.W:
-    case util.keys.A:
-    case util.keys.S:
-    case util.keys.D:
-      zelda.velocity = {
-        x: 0,
-        y: 0
-      }
-      break;
-    default:
-      break
-  }
-})
-
 // You need to create a root container that will hold the scene you want to draw.
 var stage = new PIXI.Container()
+
+
 
 
 window.spatialHash = new Pew.SpatialHash(TILESIZE)
@@ -71,6 +30,51 @@ window.spatialHash = new Pew.SpatialHash(TILESIZE)
 PIXI.loader.add('zelda', './assets/img/zelda.gif')
   .add('heart', './assets/img/heart.png')
   .load(function (loader, resources) {
+
+    var game = new Pew.Game(renderer)
+    game.registerEventHandler('click', function(evt) {
+      if (this !== document.activeElement) {
+        canvas.focus()
+      }
+    })
+    game.registerEventHandler('keyup', function(evt) {
+      switch (evt.keyCode)  {
+        case util.keys.W:
+        case util.keys.A:
+        case util.keys.S:
+        case util.keys.D:
+          zelda.velocity = {
+            x: 0,
+            y: 0
+          }
+          break;
+        default:
+          break
+      }
+    })
+
+     game.registerEventHandler('keydown', function(evt) {
+
+        switch (evt.keyCode)  {
+          case util.keys.W:
+            zelda.velocity = Pew.constants.VELOCITY.N
+            break
+          case util.keys.A:
+            zelda.velocity = Pew.constants.VELOCITY.W
+            break
+          case util.keys.S:
+            zelda.velocity = Pew.constants.VELOCITY.S
+            break
+          case util.keys.D:
+            zelda.velocity = Pew.constants.VELOCITY.E
+            break
+          default:
+            break
+        }
+
+      })
+
+
 
     // create a pew gameobject
     zelda = new Pew.GameObject({
