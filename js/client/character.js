@@ -9,7 +9,6 @@ export default class Character extends Pew.Gob {
     // events hash from event name to function
     this.events = {
       keydown: function(evt) {
-        console.log('hello')
         switch (evt.keyCode)  {
           case util.keys.W:
             that.velocity = Pew.constants.VELOCITY.N
