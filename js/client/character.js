@@ -1,4 +1,5 @@
 import * as util from './utilities'
+import Pill from './pill'
 // extends basic gob
 export default class Character extends Pew.Gob {
   constructor(...args) {
@@ -41,6 +42,12 @@ export default class Character extends Pew.Gob {
             break
         }
       }
+    }
+  }
+
+  onCollide(gob) {
+    if (gob instanceof Pill) {
+      gob.destroy()
     }
   }
 

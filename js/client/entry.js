@@ -1,5 +1,6 @@
 import * as util from './utilities'
 import Character from './character'
+import Pill from './pill'
 
 util.ready(function(){
 
@@ -76,7 +77,7 @@ PIXI.loader.add('zelda', './assets/img/zelda.gif')
         data: {
           sprite: new PIXI.Sprite(resources.heart.texture)
         }
-      })
+      }, Pill)
     // }
       game.createGob({
         position: {
@@ -94,7 +95,7 @@ PIXI.loader.add('zelda', './assets/img/zelda.gif')
         data: {
           sprite: new PIXI.Sprite(resources.heart.texture)
         }
-      })
+      }, Pill)
 
     // create a pew gob
     // zelda = new Pew.Gob({
