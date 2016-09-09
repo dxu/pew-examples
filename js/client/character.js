@@ -7,41 +7,42 @@ export default class Character extends Pew.Gob {
     let that = this
 
     // events hash from event name to function
-    this.events = {
-      keydown: function(evt) {
-        switch (evt.keyCode)  {
-          case util.keys.W:
-            that.velocity = Pew.constants.VELOCITY.N
-            break
-          case util.keys.A:
-            that.velocity = Pew.constants.VELOCITY.W
-            break
-          case util.keys.S:
-            that.velocity = Pew.constants.VELOCITY.S
-            break
-          case util.keys.D:
-            that.velocity = Pew.constants.VELOCITY.E
-            break
-          default:
-            break
-        }
-      },
-      keyup: function(evt) {
-        switch (evt.keyCode)  {
-          case util.keys.W:
-          case util.keys.A:
-          case util.keys.S:
-          case util.keys.D:
-            that.velocity = {
-              x: 0,
-              y: 0
-            }
-            break;
-          default:
-            break
-        }
-      }
-    }
+    // this.events = {
+    //   keydown: function(evt) {
+    //     switch (evt.keyCode)  {
+    //       case util.keys.W:
+    //         that.velocity = Pew.constants.VELOCITY.N
+    //         break
+    //       case util.keys.A:
+    //         that.velocity = Pew.constants.VELOCITY.W
+    //         break
+    //       case util.keys.S:
+    //         that.velocity = Pew.constants.VELOCITY.S
+    //         break
+    //       case util.keys.D:
+    //         that.velocity = Pew.constants.VELOCITY.E
+    //         break
+    //       default:
+    //         break
+    //     }
+    //   },
+    //   keyup: function(evt) {
+    //     console.log('keyup')
+    //     switch (evt.keyCode)  {
+    //       case util.keys.W:
+    //       case util.keys.A:
+    //       case util.keys.S:
+    //       case util.keys.D:
+    //         that.velocity = {
+    //           x: 0,
+    //           y: 0
+    //         }
+    //         break;
+    //       default:
+    //         break
+    //     }
+    //   }
+    // }
   }
 
   onCollide(gob) {
@@ -51,6 +52,23 @@ export default class Character extends Pew.Gob {
   }
 
   update() {
+    if (this.game.isKeyPressed(Pew.CONST.KEYS.A)) {
+      this.velocity.x = -1
+    } else if (this.game.isKeyPressed(Pew.CONST.KEYS.D)) {
+      this.velocity.x = 1
+    } else {
+      this.velocity.x = 0
+    }
+
+    if (this.game.isKeyPressed(Pew.CONST.KEYS.W)) {
+      this.velocity.y = 1
+    } else if (this.game.isKeyPressed(Pew.CONST.KEYS.S)) {
+      this.velocity.y = -1
+    } else {
+      this.velocity.y = 0
+    }
+
+
     if (this.velocity.y || this.velocity.x) {
       this.position.y -= this.velocity.y * this.speed.y;
       this.position.x += this.velocity.x * this.speed.x;

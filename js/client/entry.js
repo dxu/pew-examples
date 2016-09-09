@@ -33,7 +33,8 @@ PIXI.loader.add('zelda', './assets/img/zelda.gif')
   .load(function (loader, resources) {
 
     game = new Pew.Game(renderer, {
-      stage: new PIXI.Container()
+      stage: new PIXI.Container(),
+      showGrid: true
     })
 
     game.registerEventHandler('click', function(evt) {
@@ -105,7 +106,6 @@ var items = []
 
 
 function animate() {
-
   game.updateCanvas()
 
   requestAnimationFrame(animate);
