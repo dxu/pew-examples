@@ -59,11 +59,11 @@ PIXI.loader.add('zelda', './assets/img/zelda.gif')
       }
     }, Character)
 
-    for (var i=0; i<1; i++) {
+    // for (var i=0; i<1; i++) {
       game.createGob({
         position: {
-          x: Math.random() * 800,
-          y: Math.random() * 600
+          x: 200,
+          y: 200
         },
         speed: {
           x: 5,
@@ -77,7 +77,24 @@ PIXI.loader.add('zelda', './assets/img/zelda.gif')
           sprite: new PIXI.Sprite(resources.heart.texture)
         }
       })
-    }
+    // }
+      game.createGob({
+        position: {
+          x: 200,
+          y: 100
+        },
+        speed: {
+          x: 5,
+          y: 8
+        },
+        size: {
+          width: 50,
+          height: 50
+        },
+        data: {
+          sprite: new PIXI.Sprite(resources.heart.texture)
+        }
+      })
 
     // create a pew gob
     // zelda = new Pew.Gob({
