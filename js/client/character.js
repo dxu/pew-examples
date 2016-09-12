@@ -6,9 +6,49 @@ export default class Character extends Pew.Gob {
     super(...args)
     let that = this
 
-    // events hash from event name to function
+
+
+
+
+
+    // events hash from event name to function. You can assume that "this" will always be this gob.
+    this.events = {
+      onKeyDown: {
+        [util.keys.W]: function(evt) {
+          that.velocity.y = 1
+        },
+        [util.keys.A]: function(evt) {
+          that.velocity.x = -1
+        },
+        [util.keys.S]: function(evt) {
+          that.velocity.y = -1
+        },
+        [util.keys.D]: function(evt) {
+          that.velocity.x = 1
+        }
+      },
+      onKeyHold: {
+        [util.keys.F]: function() {
+          console.log('holding f down')
+        }
+      },
+      onKeyUp: {
+        [util.keys.W]: function(evt) {
+          that.velocity.y = 0
+        },
+        [util.keys.A]: function(evt) {
+          that.velocity.x = 0
+        },
+        [util.keys.S]: function(evt) {
+          that.velocity.y = 0
+        },
+        [util.keys.D]: function(evt) {
+          that.velocity.x = 0
+        }
+      }
+    }
     // this.events = {
-    //   keydown: function(evt) {
+    //   onKeyDown: function(evt) {
     //     switch (evt.keyCode)  {
     //       case util.keys.W:
     //         that.velocity = Pew.constants.VELOCITY.N
@@ -26,8 +66,7 @@ export default class Character extends Pew.Gob {
     //         break
     //     }
     //   },
-    //   keyup: function(evt) {
-    //     console.log('keyup')
+    //   onKeyUp: function(evt) {
     //     switch (evt.keyCode)  {
     //       case util.keys.W:
     //       case util.keys.A:
@@ -43,6 +82,7 @@ export default class Character extends Pew.Gob {
     //     }
     //   }
     // }
+
   }
 
   onCollide(gob) {
