@@ -1,4 +1,3 @@
-import * as util from './utilities'
 import Pill from './pill'
 // extends basic gob
 export default class Character extends Pew.Gob {
@@ -6,61 +5,59 @@ export default class Character extends Pew.Gob {
     super(...args)
     let that = this
 
-
-
-
-
+    console.log(Pew.CONST.KEYS.F)
 
     // events hash from event name to function. You can assume that "this" will always be this gob.
     this.events = {
       onKeyDown: {
-        [util.keys.W]: function(evt) {
+        [Pew.CONST.KEYS.W]: function(evt) {
           that.velocity.y = 1
         },
-        [util.keys.A]: function(evt) {
+        [Pew.CONST.KEYS.A]: function(evt) {
           that.velocity.x = -1
         },
-        [util.keys.S]: function(evt) {
+        [Pew.CONST.KEYS.S]: function(evt) {
           that.velocity.y = -1
         },
-        [util.keys.D]: function(evt) {
+        [Pew.CONST.KEYS.D]: function(evt) {
           that.velocity.x = 1
         }
       },
       onKeyHold: {
-        [util.keys.F]: function() {
+        [Pew.CONST.KEYS.F]: function() {
           console.log('holding f down')
         }
       },
       onKeyUp: {
-        [util.keys.W]: function(evt) {
+        [Pew.CONST.KEYS.W]: function(evt) {
           that.velocity.y = 0
         },
-        [util.keys.A]: function(evt) {
+        [Pew.CONST.KEYS.A]: function(evt) {
           that.velocity.x = 0
         },
-        [util.keys.S]: function(evt) {
+        [Pew.CONST.KEYS.S]: function(evt) {
           that.velocity.y = 0
         },
-        [util.keys.D]: function(evt) {
+        [Pew.CONST.KEYS.D]: function(evt) {
           that.velocity.x = 0
         }
       }
     }
+
     // this.events = {
     //   onKeyDown: function(evt) {
     //     switch (evt.keyCode)  {
-    //       case util.keys.W:
-    //         that.velocity = Pew.constants.VELOCITY.N
+    //       case Pew.CONST.KEYS.W:
+    //         that.velocity = Pew.CONST.VELOCITY.N
     //         break
-    //       case util.keys.A:
-    //         that.velocity = Pew.constants.VELOCITY.W
+    //       case Pew.CONST.KEYS.A:
+    //         that.velocity = Pew.CONST.VELOCITY.W
     //         break
-    //       case util.keys.S:
-    //         that.velocity = Pew.constants.VELOCITY.S
+    //       case Pew.CONST.KEYS.S:
+    //         that.velocity = Pew.CONST.VELOCITY.S
     //         break
-    //       case util.keys.D:
-    //         that.velocity = Pew.constants.VELOCITY.E
+    //       case Pew.CONST.KEYS.D:
+    //         that.velocity = Pew.CONST.VELOCITY.E
     //         break
     //       default:
     //         break
@@ -68,10 +65,10 @@ export default class Character extends Pew.Gob {
     //   },
     //   onKeyUp: function(evt) {
     //     switch (evt.keyCode)  {
-    //       case util.keys.W:
-    //       case util.keys.A:
-    //       case util.keys.S:
-    //       case util.keys.D:
+    //       case Pew.CONST.KEYS.W:
+    //       case Pew.CONST.KEYS.A:
+    //       case Pew.CONST.KEYS.S:
+    //       case Pew.CONST.KEYS.D:
     //         that.velocity = {
     //           x: 0,
     //           y: 0
@@ -92,21 +89,21 @@ export default class Character extends Pew.Gob {
   }
 
   update() {
-    if (this.game.isKeyPressed(Pew.CONST.KEYS.A)) {
-      this.velocity.x = -1
-    } else if (this.game.isKeyPressed(Pew.CONST.KEYS.D)) {
-      this.velocity.x = 1
-    } else {
-      this.velocity.x = 0
-    }
+    // if (this.game.isKeyPressed(Pew.CONST.KEYS.A)) {
+    //   this.velocity.x = -1
+    // } else if (this.game.isKeyPressed(Pew.CONST.KEYS.D)) {
+    //   this.velocity.x = 1
+    // } else {
+    //   this.velocity.x = 0
+    // }
 
-    if (this.game.isKeyPressed(Pew.CONST.KEYS.W)) {
-      this.velocity.y = 1
-    } else if (this.game.isKeyPressed(Pew.CONST.KEYS.S)) {
-      this.velocity.y = -1
-    } else {
-      this.velocity.y = 0
-    }
+    // if (this.game.isKeyPressed(Pew.CONST.KEYS.W)) {
+    //   this.velocity.y = 1
+    // } else if (this.game.isKeyPressed(Pew.CONST.KEYS.S)) {
+    //   this.velocity.y = -1
+    // } else {
+    //   this.velocity.y = 0
+    // }
 
 
     if (this.velocity.y || this.velocity.x) {
