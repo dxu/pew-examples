@@ -111,4 +111,11 @@ function animate() {
   requestAnimationFrame(animate);
 }
 
+
+
+window.a = Pew.V2.create(0, 0)
+Pew.V2.print(a)
+Pew.V2.print(Pew.V2.sum(a, Pew.V2.left))
+
+
 })
