@@ -47,10 +47,7 @@ PIXI.loader.add('zelda', './assets/img/zelda.gif')
       position: new Pew.V2(100, 100),
       width: 50,
       height: 150,
-      speed: {
-        x: 5,
-        y: 8
-      },
+      maxVelocity: new Pew.V2(5, 8),
       data: {
         sprite: new PIXI.Sprite(resources.zelda.texture)
       }
@@ -61,10 +58,6 @@ PIXI.loader.add('zelda', './assets/img/zelda.gif')
       position: new Pew.V2(200, 200),
         width: 50,
         height: 50,
-        speed: {
-          x: 5,
-          y: 8
-        },
         data: {
           sprite: new PIXI.Sprite(resources.heart.texture)
         }
@@ -74,10 +67,6 @@ PIXI.loader.add('zelda', './assets/img/zelda.gif')
         position: new Pew.V2(200, 100),
         width: 50,
         height: 50,
-        speed: {
-          x: 5,
-          y: 8
-        },
         data: {
           sprite: new PIXI.Sprite(resources.heart.texture)
         }

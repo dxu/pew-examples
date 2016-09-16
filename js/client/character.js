@@ -11,16 +11,16 @@ export default class Character extends Pew.Gob {
     this.events = {
       onKeyDown: {
         [Pew.CONST.KEYS.W]: function(evt) {
-          that.velocity.y = 1
+          that.velocity.y = that.maxVelocity.y * -1
         },
         [Pew.CONST.KEYS.A]: function(evt) {
-          that.velocity.x = -1
+          that.velocity.x = that.maxVelocity.x * -1
         },
         [Pew.CONST.KEYS.S]: function(evt) {
-          that.velocity.y = -1
+          that.velocity.y = that.maxVelocity.y * 1
         },
         [Pew.CONST.KEYS.D]: function(evt) {
-          that.velocity.x = 1
+          that.velocity.x = that.maxVelocity.x * 1
         }
       },
       onKeyHold: {
@@ -107,8 +107,7 @@ export default class Character extends Pew.Gob {
 
 
     if (this.velocity.y || this.velocity.x) {
-      this.position.y -= this.velocity.y * this.speed.y;
-      this.position.x += this.velocity.x * this.speed.x;
+      this.position = Pew.V2.add(this.position, this.velocity)
 
       this.data.sprite.position.y = this.position.y;
       this.data.sprite.position.x = this.position.x;
