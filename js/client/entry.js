@@ -44,17 +44,12 @@ PIXI.loader.add('zelda', './assets/img/zelda.gif')
     })
 
     game.createGob({
-      position: {
-        x: 100,
-        y: 100
-      },
+      position: new Pew.V2(100, 100),
+      width: 50,
+      height: 150,
       speed: {
         x: 5,
         y: 8
-      },
-      size: {
-        width: 50,
-        height: 150
       },
       data: {
         sprite: new PIXI.Sprite(resources.zelda.texture)
@@ -63,17 +58,12 @@ PIXI.loader.add('zelda', './assets/img/zelda.gif')
 
     // for (var i=0; i<1; i++) {
       game.createGob({
-        position: {
-          x: 200,
-          y: 200
-        },
+      position: new Pew.V2(200, 200),
+        width: 50,
+        height: 50,
         speed: {
           x: 5,
           y: 8
-        },
-        size: {
-          width: 50,
-          height: 50
         },
         data: {
           sprite: new PIXI.Sprite(resources.heart.texture)
@@ -81,17 +71,12 @@ PIXI.loader.add('zelda', './assets/img/zelda.gif')
       }, Pill)
     // }
       game.createGob({
-        position: {
-          x: 200,
-          y: 100
-        },
+        position: new Pew.V2(200, 100),
+        width: 50,
+        height: 50,
         speed: {
           x: 5,
           y: 8
-        },
-        size: {
-          width: 50,
-          height: 50
         },
         data: {
           sprite: new PIXI.Sprite(resources.heart.texture)
@@ -113,9 +98,9 @@ function animate() {
 
 
 
-window.a = Pew.V2.create(0, 0)
-Pew.V2.print(a)
-Pew.V2.print(Pew.V2.sum(a, Pew.V2.left))
+window.a = new Pew.V2(0, 0)
+a.print()
+Pew.V2.sum(a, Pew.V2.left).print()
 
 
 })
