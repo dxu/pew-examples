@@ -64,7 +64,7 @@ PIXI.loader.add('zelda', './assets/img/zelda.gif')
     //   }
     // }, Character)
 
-    for (var i=0; i<300; i++) {
+    for (var i=0; i<1000; i++) {
       game.createGob({
       position: new Pew.V2(Math.random() * game.getWidth(), Math.random() * game.getHeight()),
         data: {

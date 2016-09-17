@@ -100,6 +100,7 @@ export default class Character extends Pew.Gob {
 
   onCollide(gob) {
     if (gob instanceof Pill) {
+      console.log('hello')
       gob.destroy()
     }
   }

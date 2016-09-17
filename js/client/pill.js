@@ -9,10 +9,12 @@ export default class Pill extends Pew.Gob {
     this.velocity = this.maxVelocity
   }
   onCollide(gob) {
+    // console.log('hit')
     // if (gob instanceof Pill) {
-    //   this.destroy()
-
+    //   this.maxVelocity = new Pew.Vector2(Math.random() * 10, Math.random() * 10)
+    //   this.velocity = this.maxVelocity
     // }
+
   }
   update() {
     // if position is outside bounds, negate
