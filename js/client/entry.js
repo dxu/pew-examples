@@ -26,33 +26,33 @@ var stage = new PIXI.Container()
 let game
 
 window.spatialHash = new Pew.SpatialHash(TILESIZE)
-let hearts = []
-let a
+// let hearts = []
+// let a
 
 // load the texture we need
 PIXI.loader.add('zelda', './assets/img/zelda.gif')
   .add('heart', './assets/img/heart.png')
   .load(function (loader, resources) {
-    a = new PIXI.Container()
-    for (var i=0; i<1000; i++) {
-      let sprite = new PIXI.Sprite(resources.zelda.texture)
+    // a = new PIXI.Container()
+    // for (var i=0; i<1000; i++) {
+    //   let sprite = new PIXI.Sprite(resources.zelda.texture)
 
-      sprite.position.set(Math.random() * renderer.view.width, Math.random() * renderer.view.height);
-      hearts.push(sprite)
-      a.addChild(sprite)
-    }
+    //   sprite.position.set(Math.random() * renderer.view.width, Math.random() * renderer.view.height);
+    //   hearts.push(sprite)
+    //   a.addChild(sprite)
+    // }
 
 
-    // game = new Pew.Game(renderer, {
-    //   stage: new PIXI.Container(),
-    //   showGrid: true
-    // })
+    game = new Pew.Game(renderer, {
+      stage: new PIXI.Container(),
+      showGrid: true
+    })
 
-    // game.registerEventHandler('click', function(evt) {
-    //   if (this !== document.activeElement) {
-    //     canvas.focus()
-    //   }
-    // })
+    game.registerEventHandler('click', function(evt) {
+      if (this !== document.activeElement) {
+        canvas.focus()
+      }
+    })
 
     // game.createGob({
     //   position: new Pew.V2(100, 100),
@@ -64,14 +64,14 @@ PIXI.loader.add('zelda', './assets/img/zelda.gif')
     //   }
     // }, Character)
 
-    // for (var i=0; i<500; i++) {
-    //   game.createGob({
-    //   position: new Pew.V2(Math.random() * game.getWidth(), Math.random() * game.getHeight()),
-    //     data: {
-    //       sprite: new PIXI.Sprite(resources.heart.texture)
-    //     }
-    //   }, Pill)
-    // }
+    for (var i=0; i<300; i++) {
+      game.createGob({
+      position: new Pew.V2(Math.random() * game.getWidth(), Math.random() * game.getHeight()),
+        data: {
+          sprite: new PIXI.Sprite(resources.heart.texture)
+        }
+      }, Pill)
+    }
 
     animate();
 
@@ -81,13 +81,13 @@ var items = []
 
 
 function animate() {
-  // game.updateCanvas()
-  renderer.render(a);
+  game.updateCanvas()
+  // renderer.render(a);
 
-  hearts.map(function(heart) {
-    heart.position.set(heart.position.x + 1,heart.position.y + 1);
+  // hearts.map(function(heart) {
+  //   heart.position.set(heart.position.x + 1,heart.position.y + 1);
 
-  })
+  // })
 
   requestAnimationFrame(animate);
 }
