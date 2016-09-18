@@ -5,15 +5,23 @@ export default class Pill extends Pew.Gob {
     opts.height = opts.height || 10
     super(game, opts)
 
-    this.maxVelocity = new Pew.Vector2(Math.random() * 10, Math.random() * 10)
+    this.maxVelocity =
+      new Pew.Vector2(
+        (Math.round(Math.random()) * 2 - 1) * Math.random() * 3,
+        (Math.round(Math.random()) * 2 - 1) * Math.random() * 3
+      )
+
     this.velocity = this.maxVelocity
   }
   onCollide(gob) {
-    // console.log('hit')
-    // if (gob instanceof Pill) {
-    //   this.maxVelocity = new Pew.Vector2(Math.random() * 10, Math.random() * 10)
-    //   this.velocity = this.maxVelocity
-    // }
+    if (gob instanceof Pill) {
+      this.maxVelocity =
+        new Pew.Vector2(
+          (Math.round(Math.random()) * 2 - 1) * Math.random() * 3,
+          (Math.round(Math.random()) * 2 - 1) * Math.random() * 3
+        )
+      this.velocity = this.maxVelocity
+    }
 
   }
   update() {

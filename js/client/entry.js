@@ -9,7 +9,7 @@ const TILESIZE = 100
 const canvas = document.getElementById('canvas')
 // You can use either `new PIXI.WebGLRenderer`, `new PIXI.CanvasRenderer`, or `PIXI.autoDetectRenderer`
 // which will try to choose the best renderer for the environment you are in.
-var renderer = new PIXI.WebGLRenderer(800, 600, {
+var renderer = new PIXI.WebGLRenderer(window.innerWidth, window.innerHeight, {
   view: canvas
 });
 
@@ -64,7 +64,7 @@ PIXI.loader.add('zelda', './assets/img/zelda.gif')
     //   }
     // }, Character)
 
-    for (var i=0; i<1000; i++) {
+    for (var i=0; i<1500; i++) {
       game.createGob({
       position: new Pew.V2(Math.random() * game.getWidth(), Math.random() * game.getHeight()),
         data: {
