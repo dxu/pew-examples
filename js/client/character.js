@@ -124,7 +124,7 @@ export default class Character extends Pew.Gob {
 
 
     if (this.velocity.y || this.velocity.x) {
-      this.position = Pew.V2.add(this.position, this.velocity)
+      this.position = Pew.V2.Add(this.position, this.velocity)
 
       this.data.sprite.position.y = this.position.y;
       this.data.sprite.position.x = this.position.x;

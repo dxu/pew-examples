@@ -26,11 +26,9 @@ export default class Pill extends Pew.Gob {
         this.position.y + this.velocity.y > this.game.getHeight()) {
       this.velocity.y = -this.velocity.y
     }
-    this.position = Pew.V2.add(this.position, this.velocity)
+    this.position = Pew.V2.Add(this.position, this.velocity)
 
     this.data.sprite.position.y = this.position.y;
     this.data.sprite.position.x = this.position.x;
-
-
   }
 }
