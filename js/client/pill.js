@@ -11,7 +11,7 @@ export default class Pill extends Pew.Gob {
         (Math.round(Math.random()) * 2 - 1) * Math.random() * 3
       )
 
-    this.velocity = this.maxVelocity
+    this.velocity = new Pew.Vector2(0, 0)
   }
   onCollide(gob) {
     if (gob instanceof Pill) {

@@ -58,13 +58,25 @@ PIXI.loader.add('zelda', './assets/img/zelda.gif')
       position: new Pew.V2(100, 100),
       width: 50,
       height: 150,
-      maxVelocity: new Pew.V2(100, 100),
-      acceleration: new Pew.V2(10, 10),
+      maxVelocity: new Pew.V2(1000, 1000),
+      // acceleration: new Pew.V2(10, 10),
       data: {
         sprite: new PIXI.Sprite(resources.zelda.texture)
       },
       debug: true
     }, Character)
+
+      game.createGob({
+        position: new Pew.V2(300, 100),
+        width: 50,
+        height: 150,
+        maxVelocity: new Pew.V2(0, 0),
+        acceleration: new Pew.V2(0, 0),
+        debug: true,
+        data: {
+          sprite: new PIXI.Sprite(resources.heart.texture)
+        }
+      }, Pill)
 
     // game.createGob({
     //   position: new Pew.V2(100, 100),
