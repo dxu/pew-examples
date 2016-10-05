@@ -67,7 +67,7 @@ PIXI.loader.add('zelda', './assets/img/zelda.gif')
     }, Character)
 
       game.createGob({
-        position: new Pew.V2(300, 100),
+        position: new Pew.V2(100, 200),
         width: 50,
         height: 150,
         maxVelocity: new Pew.V2(0, 0),
