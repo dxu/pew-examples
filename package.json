@@ -5,7 +5,7 @@
   "main": "server.dist.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "npm run client & npm run server & nodemon ./server.dist.js",
+    "start": "npm run client & npm run server & node ./node_modules/nodemon/bin/nodemon.js ./server.dist.js",
     "client": "webpack --progress --colors --watch --config ./webpack.client.config.js",
     "server": "webpack --progress --colors --watch --config ./webpack.server.config.js"
   },
