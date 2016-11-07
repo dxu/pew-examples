@@ -15,6 +15,7 @@ export default class Character extends Pew.Gob {
         },
         [Pew.CONST.KEYS.A]: function(evt) {
           that.velocity.x = that.maxVelocity.x * -1
+          // that.velocity.y = that.maxVelocity.y * -1
         },
         [Pew.CONST.KEYS.S]: function(evt) {
           that.velocity.y = that.maxVelocity.y * 1
@@ -39,8 +40,10 @@ export default class Character extends Pew.Gob {
         [Pew.CONST.KEYS.A]: function(evt) {
           if (that.game.isKeyPressed(Pew.CONST.KEYS.D)) {
             that.velocity.x = that.maxVelocity.x * 1
+            // that.velocity.y = that.maxVelocity.y * 1
           } else {
             that.velocity.x = 0
+            // that.velocity.y = 0
           }
         },
         [Pew.CONST.KEYS.S]: function(evt) {
@@ -100,7 +103,7 @@ export default class Character extends Pew.Gob {
 
   onCollide(gob) {
     if (gob instanceof Pill) {
-      console.log('hello')
+      // console.log('hello')
       // gob.destroy()
     }
   }
