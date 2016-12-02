@@ -26,17 +26,13 @@ export default class Pill extends Pew.Gob {
   }
   update() {
     // if position is outside bounds, negate
-    if (this.position.x < 0 ||
-        this.position.x > this.game.getWidth()) {
-      this.velocity.x = -this.velocity.x
+    if (this.position.x - this.width / 2 < 0 ||
+        this.position.x + this.width / 2 > this.game.getWidth()) {
+        this.velocity.x = -this.velocity.x
     }
-    if (this.position.y < 0 ||
-        this.position.y > this.game.getHeight()) {
-      this.velocity.y = -this.velocity.y
+    if (this.position.y - this.height / 2 < 0 ||
+        this.position.y + this.height / 2 > this.game.getHeight()) {
+        this.velocity.y = -this.velocity.y
     }
-    // this.position = Pew.V2.Add(this.position, this.velocity)
-
-    // this.data.sprite.position.y = this.position.y;
-    // this.data.sprite.position.x = this.position.x;
   }
 }
