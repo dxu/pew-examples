@@ -1,8 +1,5 @@
-import * as util from './utilities'
-import Character from './character'
-import Pill from './pill'
 
-util.ready(function(){
+document.addEventListener('DOMContentLoaded', function(){
 
 const TILESIZE = 100
 
@@ -281,4 +278,4 @@ function animate() {
 // Pew.V2.sum(a, Pew.V2.left).print()
 
 
-})
+});
