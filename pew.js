@@ -108,12 +108,15 @@
 	 * @param bucketHash - hash function for determining buckets
 	 *
 	 * Usage:
-	 * Can only take in objects with a built in onCollide(object) method. The object must also contain an `_id` parameter to access a unique id
+	 * Can only take in objects with a built in onCollide(object) method. The
+	 *     object must also contain an `_id` parameter to access a unique id
 	 *
 	 *
-	 * Pass in a bucket hash function that will determine the bucket index in which the object is located
+	 * Pass in a bucket hash function that will determine the bucket index in which
+	 *      the object is located
 	 * Pass in the uuid hash function referencing the item
-	 * Pass in the Collision function for determining the collision of two polygons or game objects (AABB, Separating Axis, etc)
+	 * Pass in the Collision function for determining the collision of two polygons
+	 *      or game objects (AABB, Separating Axis, etc)
 	 *
 	 * compare(item) will return true if there exists a collision
 	 *
@@ -130,7 +133,7 @@
 	  // Takes in a 2d map tile size for calculating the bucket.
 	  function SpatialHash() {
 	    var tileSize = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 10;
-	    var bucketHash = arguments[1];
+	    var bucketHash = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : defaultBucketHash;
 	
 	    _classCallCheck(this, SpatialHash);
 	
@@ -198,30 +201,34 @@
 	      var xVel = gob._velocity.x * _private.Time.dts;
 	      var yVel = gob._velocity.y * _private.Time.dts;
 	
+	      var minX = gob._aabb[0].x;
+	      var maxX = gob._aabb[1].x;
+	      var minY = gob._aabb[0].y;
+	      var maxY = gob._aabb[3].y;
+	
 	      // if the x velocity is > 0, then don't need to add anything, the leftmost
 	      // corner is this object
-	      var l = Math.floor((gob._position.x - gob.width / 2 + Math.min(xVel, 0)) / this.tileSize);
+	      var l = Math.floor((minX + Math.min(xVel, 0)) / this.tileSize);
 	      // if the x velocity is < 0, then don't need to add anything, the rightmost
 	      // corner is this object
-	      var r = Math.floor((gob._position.x + gob.width / 2 + Math.max(xVel, 0)) / this.tileSize);
+	      var r = Math.floor((maxX + Math.max(xVel, 0)) / this.tileSize);
 	      // if the y velocity is < 0, then don't need to add anything, the topmost
 	      // corner is this object
-	      var t = Math.floor((gob._position.y - gob.height / 2 + Math.min(yVel, 0)) / this.tileSize);
+	      var t = Math.floor((minY + Math.min(yVel, 0)) / this.tileSize);
 	      // if the y velocity is > 0, then don't need to add anything, the topmost
 	      // corner is this object
-	      var b = Math.floor((gob._position.y + gob.height / 2 + Math.max(yVel, 0)) / this.tileSize);
+	      var b = Math.floor((maxY + Math.max(yVel, 0)) / this.tileSize);
 	
 	      var buckets = [];
-	
+	      var bucketHash = void 0;
 	      for (var i = l; i <= r; i++) {
 	        for (var j = t; j <= b; j++) {
-	          var bucketHash = this.bucketHash(i, j);
+	          bucketHash = this.bucketHash(i, j);
 	          // initialize bucket
 	          this.buckets[bucketHash] = this.buckets[bucketHash] || [];
 	          buckets.push(this.buckets[bucketHash]);
 	        }
 	      }
-	
 	      return buckets;
 	    }
 	  }]);
@@ -232,7 +239,7 @@
 	// assumes a default scheme for the bucket based on the default game object - position.x, position.y
 	
 	
-	function defaultBucketHash(x, y, tileSize) {
+	function defaultBucketHash(x, y) {
 	  return x + '_' + y;
 	}
 	
@@ -249,6 +256,7 @@
 	});
 	var count = 0;
 	
+	// TODO: create a type out of the id
 	function uuid() {
 	  return count++;
 	  // return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
@@ -361,6 +369,10 @@
 	  // no knowledge of the game, spatial hash, or the stage
 	
 	  // sprite: PIXI.Sprite;
+	  // velocity at next cycle
+	  // position at the next cycle
+	  // next, calculated according to relative
+	  // specified relative to the position
 	  function Gob(game, opts) {
 	    _classCallCheck(this, Gob);
 	
@@ -380,11 +392,6 @@
 	    this._edges = [];
 	    this._normals = [];
 	
-	    // the AABB. Goes from TL, clockwise
-	    this._aabb = [new _vector2.default(0, 0), // TL
-	    new _vector2.default(0, 0), // TR
-	    new _vector2.default(0, 0), // BR
-	    new _vector2.default(0, 0)];
 	    // TODO: enforce vector2 somehow. probably have to rely on duck typing
 	
 	    // A gob can have a number of shapes: a 2D AABB, a polygon, or a circle.
@@ -397,7 +404,8 @@
 	      if (opts.width && opts.height) {
 	        this.width = opts.width;
 	        this.height = opts.height;
-	        this.updateAABB();
+	      } else if (opts.relativeVertices) {
+	        this.relativeVertices = opts.relativeVertices;
 	      } else {
 	        // A circle consists of a this._position, and a this.radius
 	        // TODO: not yet implemented! Implementing circle collision detection
@@ -405,6 +413,8 @@
 	        //       geometry into polygons
 	        throw new Error('Invalid game object. A position was given, but neither\n                         a radius nor [width && height] were given');
 	      }
+	      this.calculateVertices();
+	      this.updateNormals();
 	    } else {
 	      throw new Error('Invalid game object. No vertices or position provided.');
 	    }
@@ -448,92 +458,107 @@
 	    }
 	  }
 	
-	  // update the vertices relative to center. Will update AABB together with the vertices
+	  // recalculate the vertices and normals based on relativeVertices or
+	  // width/height
 	
 	  // TODO: clean this up
+	  // current velocity
+	  // current position
+	  // current, calculated according to relative
 	
-	
-	  // TODO: clean these two up
+	  // AABB is required for calculating spatial hash
 	
 	
 	  _createClass(Gob, [{
-	    key: 'updateAABB',
-	    value: function updateAABB() {
+	    key: 'calculateVertices',
+	    value: function calculateVertices() {
 	      var _this = this;
 	
-	      // TL, BL
-	      this._aabb[0].x = this._aabb[3].x = this._position.x - this.width / 2;
-	      // TR, BR
-	      this._aabb[1].x = this._aabb[2].x = this._position.x + this.width / 2;
-	
-	      // TL, BL
-	      this._aabb[0].y = this._aabb[1].y = this._position.y - this.height / 2;
-	      // TR, BR
-	      this._aabb[2].y = this._aabb[3].y = this._position.y + this.height / 2;
-	
-	      this._edges = this._aabb.map(function (vertex, index) {
-	        return _vector2.default.Difference(_this._aabb[(index + 1) % _this._aabb.length], vertex);
+	      // if there is a width and height, then it becomes AABB
+	      if (this.width && this.height) {
+	        this._vertices = this.vertices = this._aabb = this.calculateAABB();
+	        return;
+	      }
+	      // otherwise, update absolute vertices, and
+	      this._vertices = this.relativeVertices.map(function (vertex) {
+	        return _vector2.default.Sum(vertex, _this._position);
 	      });
-	
-	      this._normals = this._edges.map(function (vertex) {
-	        return vertex.orthol();
+	      // otherwise, update absolute vertices, and
+	      this.vertices = this.relativeVertices.map(function (vertex) {
+	        return _vector2.default.Sum(vertex, _this.position);
 	      });
+	      this._aabb = this.calculateAABBFromVertices();
 	    }
 	
-	    // TODO: NOT TESTED! DO NOT USE YET!! DOESN'T UPDATE PREVIOUS ABSOLUTE
-	    // VERTICES
-	    //
-	    // optional prevVertices to allow for seeding the previous vertices. normally
-	    // will just copy the old absolute vertices
+	    // update the vertices relative to center. Will update AABB together with the
+	    // vertices
+	    // TODO: in the future, support getting passed Array<Vector2> and calculating
+	    // from given vertices
 	
 	  }, {
-	    key: 'changeAbsoluteVertices',
-	    value: function changeAbsoluteVertices(vertices, prevVertices) {
+	    key: 'calculateAABB',
+	    value: function calculateAABB() {
+	      // the AABB. Goes from TL, clockwise
+	      var aabb = [new _vector2.default(0, 0), // TL
+	      new _vector2.default(0, 0), // TR
+	      new _vector2.default(0, 0), // BR
+	      new _vector2.default(0, 0)];
+	
+	      // TL, BL
+	      aabb[0].x = aabb[3].x = this._position.x - this.width / 2;
+	      // TR, BR
+	      aabb[1].x = aabb[2].x = this._position.x + this.width / 2;
+	
+	      // TL, BL
+	      aabb[0].y = aabb[1].y = this._position.y - this.height / 2;
+	      // TR, BR
+	      aabb[2].y = aabb[3].y = this._position.y + this.height / 2;
+	
+	      return aabb;
+	    }
+	  }, {
+	    key: 'calculateAABBFromVertices',
+	    value: function calculateAABBFromVertices() {
+	      var minX = 0;
+	      var minY = 0;
+	      var maxX = 0;
+	      var maxY = 0;
+	      // go through vertices
+	      this._vertices.map(function (vertex) {
+	        minX = Math.min(minX, vertex.x);
+	        minY = Math.min(minX, vertex.y);
+	        maxX = Math.max(minX, vertex.x);
+	        maxY = Math.max(minX, vertex.y);
+	      });
+	      // the AABB. Goes from TL, clockwise
+	      var aabb = [new _vector2.default(minY, minX), // TL
+	      new _vector2.default(minY, maxX), // TR
+	      new _vector2.default(maxY, minX), // BR
+	      new _vector2.default(maxY, maxX)];
+	      return aabb;
+	    }
+	  }, {
+	    key: 'updateNormals',
+	    value: function updateNormals() {
 	      var _this2 = this;
 	
-	      // update previousAbsoluteVertices
-	      if (prevVertices == null) {
-	        this._absoluteVertices.forEach(function (vertex, index) {
-	          _this2._previousAbsoluteVertices[index].x = vertex.x;
-	          _this2._previousAbsoluteVertices[index].x = vertex.y;
-	        });
-	      } else {
-	        this._previousAbsoluteVertices = prevVertices;
-	      }
-	      this._absoluteVertices = vertices;
-	      // update edges
-	      this._edges = vertices.map(function (vertex, index) {
-	        return _vector2.default.Difference(vertices[(index + 1) % vertices.length], vertex);
+	      this._edges = this._vertices.map(function (vertex, index) {
+	        return _vector2.default.Difference(_this2._vertices[(index + 1) % _this2._vertices.length], vertex);
 	      });
+	
 	      this._normals = this._edges.map(function (vertex) {
 	        return vertex.orthol();
 	      });
 	    }
-	
-	    // get absolute vertices, instead of relative to the center
-	
 	  }, {
-	    key: 'getAbsoluteVertices',
-	    value: function getAbsoluteVertices() {
-	      return this._absoluteVertices;
+	    key: '_getVertices',
+	    value: function _getVertices() {
+	      return this._vertices;
 	    }
 	  }, {
-	    key: 'getAABB',
-	    value: function getAABB() {
-	      return this._aabb;
-	    }
-	
-	    // get previous absolute vertices
-	
-	  }, {
-	    key: 'getPreviousAbsoluteVertices',
-	    value: function getPreviousAbsoluteVertices() {
-	      return this._previousAbsoluteVertices;
-	    }
-	  }, {
-	    key: 'getEdges',
-	    value: function getEdges() {
-	      return this._edges;
+	    key: 'getVertices',
+	    value: function getVertices() {
+	      return this.vertices;
 	    }
 	
 	    // TODO: normals need to be updated when rotating!!!
@@ -625,12 +650,6 @@
 	
 	      // same with derived values
 	      this.updateDerived();
-	
-	      // this.updatePosition(this._velocity.x * Time.dts, this._velocity.y * Time.dts)
-	
-	      // this.velocity.x = this._velocity.x + this.acceleration.x * Time.dts
-	      // this.velocity.y = this._velocity.y + this.acceleration.y * Time.dts
-	      // console.log('next', this._velocity, this.velocity)
 	    }
 	
 	    // TODO: is there any way to enforce that methods are run?
@@ -662,7 +681,7 @@
 	      this._debugData.outline = new PIXI.Graphics();
 	      this._debugData.outline.lineStyle(1, 0x000000, 1);
 	
-	      var a = this._aabb.reduce(function (memo, vertex, index, arr) {
+	      var a = this._vertices.reduce(function (memo, vertex, index, arr) {
 	        memo.push(vertex.x);
 	        memo.push(vertex.y);
 	        if (index === arr.length - 1) {
@@ -680,8 +699,6 @@
 	    key: '_debug',
 	    value: function _debug() {
 	      // update the position of the outline
-	      // let xDiff = this._position.x - this._previousPosition.x
-	      // let yDiff = this._position.y - this._previousPosition.y
 	      this._debugData.outline.position.x += this._position.x - this._debugData.previousPosition.x;
 	      this._debugData.outline.position.y += this._position.y - this._debugData.previousPosition.y;
 	    }
@@ -706,26 +723,13 @@
 	      this.data.sprite.position.x = this._position.x;
 	    }
 	
-	    // takes in an x and y to update the derived values - AABB,
-	    // previousAbsoluteVertices, absoluteVertices, etc.
+	    // TODO: reuse the vectors (add the differences when it moves instead of
+	    // reinstantiating every vector)
 	
 	  }, {
 	    key: 'updateDerived',
 	    value: function updateDerived() {
-	      // let xDiff = this._position.x - this._previousPosition.x
-	      // let yDiff = this._position.y - this._previousPosition.y
-	
-	      // if (xDiff !== 0 || yDiff !== 0) {
-	      //   // update all absolute vertices with the position - previousposition
-	      //   this._absoluteVertices.map((vert, index) => {
-	      //     // console.log('updating prev')
-	      //     // update the previous
-	      //     this._previousAbsoluteVertices[index].x = vert.x
-	      //     this._previousAbsoluteVertices[index].y = vert.y
-	      //     vert.add(xDiff, yDiff)
-	      //   })
-	      // }
-	      this.updateAABB();
+	      this.calculateVertices();
 	    }
 	  }]);
 	
@@ -38023,7 +38027,7 @@
 	
 	var _util2 = _interopRequireDefault(_util);
 	
-	var _keyboard = __webpack_require__(189);
+	var _keyboard = __webpack_require__(188);
 	
 	var _keyboard2 = _interopRequireDefault(_keyboard);
 	
@@ -38280,11 +38284,7 @@
 	
 	var _spatialhash2 = _interopRequireDefault(_spatialhash);
 	
-	var _contactcache = __webpack_require__(187);
-	
-	var _contactcache2 = _interopRequireDefault(_contactcache);
-	
-	var _collision = __webpack_require__(188);
+	var _collision = __webpack_require__(187);
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 	
@@ -38359,68 +38359,6 @@
 
 /***/ },
 /* 187 */
-/***/ function(module, exports) {
-
-	"use strict";
-	
-	Object.defineProperty(exports, "__esModule", {
-	  value: true
-	});
-	
-	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-	
-	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-	
-	// TODO: CURRENTLY NOT BEING USED
-	// one gob can hit multiple objects at the same time
-	// id: {
-	//   id: true
-	//   ...
-	// }
-	// ...
-	var ContactCache = function () {
-	  function ContactCache() {
-	    _classCallCheck(this, ContactCache);
-	
-	    this.cache = {};
-	  }
-	
-	  _createClass(ContactCache, [{
-	    key: "init",
-	    value: function init(gobIds) {
-	      var _this = this;
-	
-	      gobIds.map(function (id) {
-	        _this.cache[id] = {};
-	      });
-	    }
-	  }, {
-	    key: "get",
-	    value: function get(id) {
-	      return this.cache[id];
-	    }
-	
-	    // id1 touched id2
-	
-	  }, {
-	    key: "set",
-	    value: function set(id1, id2) {
-	      this.cache[id1][id2] = true;
-	    }
-	  }, {
-	    key: "empty",
-	    value: function empty() {
-	      this.cache = {};
-	    }
-	  }]);
-	
-	  return ContactCache;
-	}();
-	
-	exports.default = ContactCache;
-
-/***/ },
-/* 188 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -38490,8 +38428,9 @@
 	// http://www.metanetsoftware.com/technique/tutorialA.html
 	function SAT(gob1, gob2) {
 	  // get the absolute vertices
-	  var vertices1 = gob1.getAABB();
-	  var vertices2 = gob2.getAABB();
+	  var vertices1 = gob1.getVertices();
+	
+	  var vertices2 = gob2.getVertices();
 	
 	  // gather the normals
 	  var normals1 = gob1.getNormals();
@@ -38604,8 +38543,9 @@
 	// https://www.geometrictools.com/Documentation/MethodOfSeparatingAxes.pdf
 	function movingSAT(gob1, gob2) {
 	  // get the absolute vertices
-	  var vertices1 = gob1.getAABB();
-	  var vertices2 = gob2.getAABB();
+	  var vertices1 = gob1.getVertices();
+	
+	  var vertices2 = gob2.getVertices();
 	
 	  // velocity
 	  var velocity = _vector2.default.Difference(gob2._velocity, gob1._velocity);
@@ -38778,7 +38718,7 @@
 	}
 
 /***/ },
-/* 189 */
+/* 188 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -38791,7 +38731,7 @@
 	
 	var _public = __webpack_require__(184);
 	
-	var _key = __webpack_require__(190);
+	var _key = __webpack_require__(189);
 	
 	var _key2 = _interopRequireDefault(_key);
 	
@@ -38801,7 +38741,8 @@
 	
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 	
-	// there should be one canvas per game, one keyboard per game, hence one canvas per keyboard
+	// there should be one canvas per game, one keyboard per game,
+	//       hence one canvas per keyboard
 	// Note: Keyboard should never have a reference to gob
 	var Keyboard = function () {
 	  // takes in the canvas?
@@ -38818,12 +38759,12 @@
 	      // keyCode: 1
 	    }), _defineProperty(_handlerSets, _public.EVENTS.ONKEYUP, {}), _defineProperty(_handlerSets, _public.EVENTS.ONKEYHOLD, {}), _handlerSets);
 	
-	    this.keys = {}
-	    // keyCode: new Key()
-	
+	    this.keys = {
+	      // keyCode: new Key()
+	    };
 	
 	    // set up the event handlers
-	    ;this.canvas.addEventListener('keydown', function (evt) {
+	    this.canvas.addEventListener('keydown', function (evt) {
 	      // only execute the hold handlers if it's already down
 	      if (_this.keys[evt.keyCode].pressed) {
 	        _this.keys[evt.keyCode].keyHold();
@@ -38837,8 +38778,8 @@
 	    });
 	
 	    // initialize all of the Keys
-	    for (var keyCode in _public.KEYS) {
-	      this.keys[_public.KEYS[keyCode]] = new _key2.default(_public.KEYS[keyCode]);
+	    for (var k in _public.KEYS) {
+	      this.keys[_public.KEYS[k]] = new _key2.default(_public.KEYS[k]);
 	    }
 	  }
 	
@@ -38853,31 +38794,33 @@
 	    //    [keyCode]: handlerFunc
 	    //  }
 	    // }
+	    // TODO: add events type
 	
 	  }, {
 	    key: 'addGobEventHandlers',
 	    value: function addGobEventHandlers(id, events) {
-	      for (var eventType in events) {
-	        for (var keyCode in events[eventType]) {
-	          this.keys[keyCode].processHandler(eventType, id, events[eventType][keyCode]);
-	
+	      for (var _eventType in events) {
+	        // $FlowFixMe: for in loops are broken: https://github.com/facebook/flow/issues/2970
+	        for (var _keyCodeId in events[_eventType]) {
+	          this.keys[_keyCodeId].processHandler(_eventType, id, events[_eventType][_keyCodeId]);
 	          // update the handlersets
-	          this.handlerSets[eventType][keyCode] = 1;
+	          this.handlerSets[_eventType][_keyCodeId] = 1;
 	        }
 	      }
 	    }
 	
 	    // TODO: remove gob references, for on destroy
+	    // TODO: add events type
 	
 	  }, {
 	    key: 'removeGobEventHandlers',
 	    value: function removeGobEventHandlers(id, events) {
-	      for (var eventType in events) {
-	        for (var keyCode in events[eventType]) {
-	          this.keys[keyCode].removeHandler(id, eventType);
-	
+	      for (var _eventType2 in events) {
+	        // $FlowFixMe: for in loops are broken: https://github.com/facebook/flow/issues/2970
+	        for (var keyCode in events[_eventType2]) {
+	          this.keys[keyCode].removeHandler(id, _eventType2);
 	          if (this.keys[keyCode].count === 0) {
-	            delete this.handlerSets[eventType][keyCode];
+	            delete this.handlerSets[_eventType2][keyCode];
 	          }
 	        }
 	      }
@@ -38890,7 +38833,7 @@
 	exports.default = Keyboard;
 
 /***/ },
-/* 190 */
+/* 189 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';

@@ -39,6 +39,7 @@ PIXI.loader.add('zelda', './assets/img/zelda.gif')
     //   a.addChild(sprite)
     // }
 
+    /* Test moving SAT collisions */
     game = new Pew.Pool(renderer, {
       stage: new PIXI.Container(),
       showGrid: true
@@ -49,208 +50,104 @@ PIXI.loader.add('zelda', './assets/img/zelda.gif')
         canvas.focus()
       }
     })
+    game.createGob({
+      position: new Pew.V2(40, 100),
+      mass: 1,
+      bounce: 1,
+      friction: 0,
+      relativeVertices: [new Pew.V2(-30, 10), new Pew.V2(30, 20), new Pew.V2(20, -15), new Pew.V2(-10, -15)],
+      // width: 20,
+      // height: 20,
+      velocity: new Pew.V2(100, 100),
+      acceleration: new Pew.V2(0, 0),
+      debug: true,
+      data: {
+        sprite: new PIXI.Sprite(resources.heart.texture)
+      }
+    }, Pill)
 
-    // game.createGob({
-    //   position: new Pew.V2(140, 250),
-    //   width: 150,
-    //   height: 160,
-    //   maxVelocity: new Pew.V2(500, 500),
-    //   // acceleration: new Pew.V2(10, 10),
-    //   data: {
-    //     sprite: new PIXI.Sprite(resources.zelda.texture)
-    //   },
-    //   debug: true
-    // }, Character)
+    game.createGob({
+      position: new Pew.V2(125.78, 172.15),
+      mass: 1,
+      bounce: 1,
+      friction: 0,
+      relativeVertices: [new Pew.V2(-30, 10), new Pew.V2(30, 20), new Pew.V2(20, -15), new Pew.V2(-10, -25), new Pew.V2(-20, -20)],
+      // width: 20,
+      // height: 20,
+      velocity: new Pew.V2(0, 0),
+      acceleration: new Pew.V2(0, 0),
+      debug: true,
+      data: {
+        sprite: new PIXI.Sprite(resources.heart.texture)
+      }
+    }, Pill)
 
-      // game.createGob({
-      //   position: new Pew.V2(100, 100),
-      //   width: 30,
-      //   height: 30,
-      //   velocity: new Pew.V2(50, 50),
-      //   acceleration: new Pew.V2(0, 0),
-      //   debug: true,
-      //   data: {
-      //     sprite: new PIXI.Sprite(resources.heart.texture)
-      //   }
-      // }, Pill)
+    game.createGob({
+      position: new Pew.V2(225.78, 172.15),
+      mass: 1,
+      bounce: 1,
+      friction: 0,
+      relativeVertices: [new Pew.V2(-30, 10), new Pew.V2(30, 20), new Pew.V2(20, -15), new Pew.V2(-10, -25), new Pew.V2(-20, -20)],
+      // width: 20,
+      // height: 20,
+      velocity: new Pew.V2(0, 0),
+      acceleration: new Pew.V2(0, 0),
+      debug: true,
+      data: {
+        sprite: new PIXI.Sprite(resources.heart.texture)
+      }
+    }, Pill)
 
-      // game.createGob({
-      //   position: new Pew.V2(30, 30),
-      //   width: 30,
-      //   height: 30,
-      //   velocity: new Pew.V2(0, 0),
-      //   acceleration: new Pew.V2(0, 0),
-      //   debug: true,
-      //   data: {
-      //     sprite: new PIXI.Sprite(resources.heart.texture)
-      //   }
-      // }, Pill)
-
-      // game.createGob({
-      //   position: new Pew.V2(40, 30),
-      //   width: 30,
-      //   height: 30,
-      //   velocity: new Pew.V2(0, 0),
-      //   acceleration: new Pew.V2(0, 0),
-      //   debug: true,
-      //   data: {
-      //     sprite: new PIXI.Sprite(resources.heart.texture)
-      //   }
-      // }, Pill)
-
-      game.createGob({
-        position: new Pew.V2(400, 100),
-        mass: 1,
-        bounce: 1,
-        friction: 0,
-        width: 20,
-        height: 20,
-        velocity: new Pew.V2(100, 100),
-        acceleration: new Pew.V2(0, 0),
-        debug: true,
-        data: {
-          sprite: new PIXI.Sprite(resources.heart.texture)
-        }
-      }, Pill)
-
-      game.createGob({
-        position: new Pew.V2(445.78, 132.15),
-        mass: 1,
-        bounce: 1,
-        friction: 0,
-        width: 20,
-        height: 20,
-        velocity: new Pew.V2(0, 0),
-        acceleration: new Pew.V2(0, 0),
-        debug: true,
-        data: {
-          sprite: new PIXI.Sprite(resources.heart.texture)
-        }
-      }, Pill)
-
-      // game.createGob({
-      //   position: new Pew.V2(400, 350),
-      //   width: 20,
-      //   height: 20,
-      //   velocity: new Pew.V2(250, 74),
-      //   acceleration: new Pew.V2(0, 0),
-      //   debug: true,
-      //   data: {
-      //     sprite: new PIXI.Sprite(resources.heart.texture)
-      //   }
-      // }, Pill)
-
-      // game.createGob({
-      //   position: new Pew.V2(500, 400),
-      //   width: 20,
-      //   height: 20,
-      //   velocity: new Pew.V2(20, -100),
-      //   acceleration: new Pew.V2(0, 0),
-      //   debug: true,
-      //   data: {
-      //     sprite: new PIXI.Sprite(resources.heart.texture)
-      //   }
-      // }, Pill)
+    game.createGob({
+      position: new Pew.V2(425.78, 72.15),
+      mass: 1,
+      bounce: 1,
+      friction: 0,
+      relativeVertices: [new Pew.V2(-30, 10), new Pew.V2(30, 20), new Pew.V2(20, -15), new Pew.V2(-10, -25), new Pew.V2(-20, -20)],
+      // width: 20,
+      // height: 20,
+      velocity: new Pew.V2(0, 0),
+      acceleration: new Pew.V2(0, 0),
+      debug: true,
+      data: {
+        sprite: new PIXI.Sprite(resources.heart.texture)
+      }
+    }, Pill)
 
 
-      // game.createGob({
-      //   position: new Pew.V2(450, 450),
-      //   width: 20,
-      //   height: 20,
-      //   velocity: new Pew.V2(6.201277, 9.0945),
-      //   acceleration: new Pew.V2(0, 0),
-      //   debug: true,
-      //   data: {
-      //     sprite: new PIXI.Sprite(resources.heart.texture)
-      //   }
-      // }, Pill)
+    /* Test non-moving SAT collisions */
+    game.createGob({
+      position: new Pew.V2(500, 500),
+      mass: 1,
+      bounce: 1,
+      friction: 0,
+      relativeVertices: [new Pew.V2(-30, 10), new Pew.V2(30, 20), new Pew.V2(20, -15), new Pew.V2(-10, -25), new Pew.V2(-20, -20)],
+      // width: 20,
+      // height: 20,
+      velocity: new Pew.V2(0, 0),
+      acceleration: new Pew.V2(0, 0),
+      debug: true,
+      data: {
+        sprite: new PIXI.Sprite(resources.heart.texture)
+      }
+    }, Pill)
 
-      // game.createGob({
-      //   position: new Pew.V2(500, 500),
-      //   width: 20,
-      //   height: 20,
-      //   velocity: new Pew.V2(-2.292953, -3.09452),
-      //   acceleration: new Pew.V2(0, 0),
-      //   debug: true,
-      //   data: {
-      //     sprite: new PIXI.Sprite(resources.heart.texture)
-      //   }
-      // }, Pill)
+    game.createGob({
+      position: new Pew.V2(510, 510),
+      mass: 1,
+      bounce: 1,
+      friction: 0,
+      relativeVertices: [new Pew.V2(-30, 10), new Pew.V2(30, 20), new Pew.V2(20, -15), new Pew.V2(-10, -25), new Pew.V2(-20, -20)],
+      // width: 20,
+      // height: 20,
+      velocity: new Pew.V2(0, 0),
+      acceleration: new Pew.V2(0, 0),
+      debug: true,
+      data: {
+        sprite: new PIXI.Sprite(resources.heart.texture)
+      }
+    }, Pill)
 
-
-
-//       game.createGob({
-//         position: new Pew.V2(334.254408, 505.4280523),
-//         width: 20,
-//         height: 20,
-//         velocity: new Pew.V2(6.201277, 9.0945),
-//         acceleration: new Pew.V2(0, 0),
-//         debug: true,
-//         data: {
-//           sprite: new PIXI.Sprite(resources.heart.texture)
-//         }
-//       }, Pill)
-
-//       game.createGob({
-//         position: new Pew.V2(354.354, 489.388),
-//         width: 20,
-//         height: 20,
-//         velocity: new Pew.V2(-2.292953, -3.09452),
-//         acceleration: new Pew.V2(0, 0),
-//         debug: true,
-//         data: {
-//           sprite: new PIXI.Sprite(resources.heart.texture)
-//         }
-//       }, Pill)
-
-      // game.createGob({
-      //   position: new Pew.V2(290, 290),
-      //   width: 30,
-      //   height: 30,
-      //   velocity: new Pew.V2(-1500, 0),
-      //   acceleration: new Pew.V2(0, 0),
-      //   debug: true,
-      //   data: {
-      //     sprite: new PIXI.Sprite(resources.heart.texture)
-      //   }
-      // }, Pill)
-
-    // for (var i=0; i<100; i++) {
-    //   const x = Math.random() * (game.getWidth() - 45) + 20
-    //   const y = Math.random() * (game.getHeight() - 45) + 20
-    //   game.createGob({
-    //     position: new Pew.V2(x, y),
-    //     width: 30,
-    //     height: 30,
-    //     velocity: new Pew.V2(Math.random() * 500, Math.random() * 500),
-    //     acceleration: new Pew.V2(0, 0),
-    //     debug: true,
-    //     data: {
-    //       sprite: new PIXI.Sprite(resources.heart.texture)
-    //     }
-    //   }, Pill)
-    // }
-
-    // game.createGob({
-    //   position: new Pew.V2(100, 100),
-    //   width: 50,
-    //   height: 150,
-    //   maxVelocity: new Pew.V2(5, 8),
-    //   data: {
-    //     sprite: new PIXI.Sprite(resources.zelda.texture)
-    //   }
-    // }, Character)
-
-    // for (var i=0; i<300; i++) {
-    //   game.createGob({
-    //     debug: true,
-    //     velocity: new Pew.V2(Math.random() * 1000, Math.random() * 1000),
-    //   position: new Pew.V2(Math.random() * game.getWidth(), Math.random() * game.getHeight()),
-    //     data: {
-    //       sprite: new PIXI.Sprite(resources.heart.texture)
-    //     }
-    //   }, Pill)
-    // }
 
     animate();
 

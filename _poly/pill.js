@@ -1,8 +1,8 @@
 // extends basic gob
 class Pill extends Pew.Gob {
   constructor(game, opts) {
-    opts.width = opts.width || 10
-    opts.height = opts.height || 10
+    // opts.width = opts.width || 10
+    // opts.height = opts.height || 10
     super(game, opts)
 
     // this.maxVelocity =
