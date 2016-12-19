@@ -236,7 +236,8 @@
 	  return SpatialHash;
 	}();
 	
-	// assumes a default scheme for the bucket based on the default game object - position.x, position.y
+	// assumes a default scheme for the bucket based on the default game object -
+	// position.x, position.y
 	
 	
 	function defaultBucketHash(x, y) {
@@ -278,6 +279,7 @@
 	Object.defineProperty(exports, "__esModule", {
 	  value: true
 	});
+	
 	// A lot of time constants are based on Phaser's decisions:
 	// https://github.com/photonstorm/phaser/blob/a29cc649327fe57e4eb0c2b89813aadf33ab6e5b/src/time/Time.js
 	var Time = exports.Time = {
@@ -365,7 +367,8 @@
 	
 	var Gob = function () {
 	
-	  // NOTE: The parent container should be responsible for adding this to a stage. this should have
+	  // NOTE: The parent container should be responsible for adding this to a
+	  //       stage. this should have
 	  // no knowledge of the game, spatial hash, or the stage
 	
 	  // sprite: PIXI.Sprite;
@@ -432,7 +435,8 @@
 	    // generic optional data
 	    this.data = opts.data;
 	
-	    // initialize a refs array. This will contain any other object that will contain references
+	    // initialize a refs array. This will contain any other object that will
+	    // contain references
 	    // to this object
 	    this.refs = _defineProperty({}, game._id, game);
 	    this.game = game;
@@ -447,7 +451,8 @@
 	    // TODO: allow separately setting the sprite width/height
 	    this.data.sprite.scale.set(this.width / this.data.sprite.width, this.height / this.data.sprite.height);
 	
-	    // TODO: add handler for checking if a key is being pressed. SHOULD THIS BE HANDLED BY THE GAME?
+	    // TODO: add handler for checking if a key is being pressed. SHOULD THIS BE
+	    //       HANDLED BY THE GAME?
 	    // answer: yes.
 	
 	    // default false
@@ -38217,7 +38222,7 @@
 	
 	      // TODO: should updates be passed any state?
 	      for (var i = 0; i < this.gobs.length; i++) {
-	        // all we need to do is check the AABB, i.e, the position, and the width/height
+	        // all we need to do is check the AABB, i.e, the position,
 	        var prevX = this.gobs[i]._position.x;
 	        var prevY = this.gobs[i]._position.y;
 	        var prevWidth = this.gobs[i].width;
@@ -38255,7 +38260,7 @@
 	    // in the game states. The Game object should shift between the states to
 	    // determine which update methods are called
 	    //
-	    // run through the pool of objects and update all positions based on the velocities
+	    // run through pool of objects and update positions based on the velocities
 	    // Should be defined/overwritten when extended
 	
 	  }, {
@@ -38290,7 +38295,8 @@
 	
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 	
-	// TODO: contact cache should just store all checks to prevent duplicates, not just the ones that collided
+	// TODO: contact cache should just store all checks to prevent duplicates, not
+	//       just the ones that collided
 	var CollisionEngine = function () {
 	  function CollisionEngine(tileSize) {
 	    _classCallCheck(this, CollisionEngine);
@@ -38318,7 +38324,8 @@
 	        this.contactCache[gobs[i]._id] = {};
 	      }
 	
-	      // TODO: Race condition: 2 bullets of different speed, will hit guy on same frame. should both be destroyed? probably.
+	      // TODO: Race condition: 2 bullets of different speed, will hit guy on same
+	      //       frame. should both be destroyed? probably.
 	      // for every gob determine if there is a collision
 	      for (var _i = 0; _i < changedGobs.length; _i++) {
 	        var collidableBuckets = this.spatialHash.getPossibleGobs(changedGobs[_i]);
@@ -38328,8 +38335,6 @@
 	          for (var k = 0; k < collidableBuckets[j].length; k++) {
 	            var gob1 = changedGobs[_i];
 	            var gob2 = collidableBuckets[j][k];
-	            var partialTimeStep = void 0;
-	            var MTV = void 0;
 	
 	            // check if gob1 has been checked with gob2
 	            if (gob1._id !== gob2._id && !this.contactCache[gob1._id][gob2._id] && !this.contactCache[gob2._id][gob1._id]) {
@@ -38370,7 +38375,8 @@
 	var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
 	
 	var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
-	// TODO: don't use this directly, refer to it from game so this is completely separate
+	// TODO: don't use this directly, refer to it from game so this is completely
+	//       separate
 	
 	
 	exports.SAT = SAT;
@@ -38413,7 +38419,8 @@
 	    // the magnitude of the overlap
 	    var newMTVMagnitude = Math.min(max2 - min1, max1 - min2);
 	    var vectorMag = vector.mag();
-	    // if the magnitude is smaller than the magnitude of the current mtv then we should update
+	    // if the magnitude is smaller than the magnitude of the current mtv then we
+	    //    should update
 	    // the mtv with the new values
 	    if (newMTVMagnitude < MTV.mag()) {
 	      MTV.x = vector.x * newMTVMagnitude / vectorMag;
@@ -38429,7 +38436,6 @@
 	function SAT(gob1, gob2) {
 	  // get the absolute vertices
 	  var vertices1 = gob1.getVertices();
-	
 	  var vertices2 = gob2.getVertices();
 	
 	  // gather the normals
@@ -38438,9 +38444,11 @@
 	
 	  var MTV = new _vector2.default(-Infinity, -Infinity);
 	
-	  // for each normal, project both shapes onto the normal. if they don't intersect, then immediately return false.
+	  // for each normal, project both shapes onto the normal. if they don't
+	  // intersect, then immediately return false.
 	  // otherwise return true at the end
 	  for (var i = 0; i < normals1.length; i++) {
+	    // $invariant: MTV will never be null
 	    MTV = checkProjectionOverlap(vertices1, vertices2, normals1[i], MTV);
 	    if (MTV == null) {
 	      return false;
@@ -38448,6 +38456,7 @@
 	  }
 	
 	  for (var _i = 0; _i < normals2.length; _i++) {
+	    // $invariant: MTV will never be null
 	    MTV = checkProjectionOverlap(vertices1, vertices2, normals2[_i], MTV);
 	    if (MTV == null) {
 	      return false;
@@ -38455,6 +38464,7 @@
 	  }
 	
 	  // TODO: adjust the gobs here instead of in collision engine
+	  // $invariant MTV will have returned by now if null
 	  resolveStaticCollision(gob1, gob2, MTV);
 	
 	  return true;
@@ -38462,23 +38472,19 @@
 	
 	/* resolve a collision between two non-moving objects (project them out) */
 	function resolveStaticCollision(gob1, gob2, MTV) {
-	  // first project gob1 and gob2 out of the MTV by determining the proportion of VELOCITY
-	  var v1m = gob1.velocity.mag();
-	  var v2m = gob2.velocity.mag();
+	  // first project gob1 and gob2 out of the MTV by determining the proportion of
+	  // VELOCITY
+	  // const v1m: number = gob1.velocity.mag();
+	  // const v2m: number = gob2.velocity.mag();
 	
-	  var totalVelocity = v1m + v2m;
-	
-	  var p1 = v1m / (v1m + v2m);
-	  var p2 = v2m / (v2m + v1m);
+	  // const totalVelocity: number = v1m + v2m;
 	
 	  var _ref = gob1.position.x >= gob2.position.x ? [gob2, gob1] : [gob1, gob2],
 	      _ref2 = _slicedToArray(_ref, 2),
-	      left = _ref2[0],
 	      right = _ref2[1];
 	
 	  var _ref3 = gob1.position.y >= gob2.position.y ? [gob2, gob1] : [gob1, gob2],
 	      _ref4 = _slicedToArray(_ref3, 2),
-	      top = _ref4[0],
 	      bottom = _ref4[1];
 	
 	  right.position.x += MTV.x;
@@ -38491,6 +38497,9 @@
 	// collistion, just set the mass to 0!
 	// http://vobarian.com/collisions/2dcollisions2.pdf
 	function adjustPhysicsVelocity(gob1, gob2, normal) {
+	  if (normal == null) {
+	    throw new Error('Tried to adjust post-collision velocities, but wasn\'t\n      given a normal!');
+	  }
 	  // tangent is the normal of the normal
 	  var tangent = normal.orthol();
 	  // const unitNormal = Vector2.Normalized(normal)
@@ -38553,19 +38562,18 @@
 	  // gather the normals
 	  var normals = gob1.getNormals().concat(gob2.getNormals());
 	
-	  var MTV = new _vector2.default(-Infinity, -Infinity);
+	  // const MTV: Vector2 = new Vector2(-Infinity, -Infinity);
 	
 	  // we are calculating in terms of a single timestep
 	  var TMax = _private.Time.dts;
 	  var TFirst = 0;
 	  var TLast = Infinity;
 	
-	  var Length = 0;
+	  // TODO: do we need this?
+	  var Length = 0;Length;
 	
 	  // if there has been a collision, calculate how far it's gone
-	  var TElapsed = 0;
-	  var edge1 = void 0;
-	  var edge2 = void 0;
+	  var TElapsed = 0;TElapsed;
 	  var normal = void 0;
 	
 	  // for each normal, project both shapes onto the normal.
@@ -38582,12 +38590,13 @@
 	    var min1 = Infinity;
 	    var max1 = -Infinity;
 	
-	    var min0Index = Infinity;
-	    var max0Index = -Infinity;
-	    var min1Index = Infinity;
-	    var max1Index = -Infinity;
+	    // TODO: do we need this?
+	    var min0Index = Infinity;min0Index;
+	    var max0Index = -Infinity;max0Index;
+	    var min1Index = Infinity;min1Index;
+	    var max1Index = -Infinity;max1Index;
 	
-	    // get max and min of collision
+	    // get max and min of collison
 	    vertices1.map(function (vertex, index) {
 	      var val = _vector2.default.ProjectScalar(vertex, normals[i]);
 	      min0 = Math.min(min0, val);
@@ -38695,7 +38704,8 @@
 	    if ((typeof _ret === 'undefined' ? 'undefined' : _typeof(_ret)) === "object") return _ret.v;
 	  }
 	
-	  // collided! we limit the gob resolution to this method, to preserve modularity
+	  // collided! we limit the gob resolution to this method, to preserve
+	  // modularity
 	  if (TFirst !== 0) {
 	    // it's going to collide with this next move. in this case, we need to
 	    // adjust so it doesn't overshoot.
