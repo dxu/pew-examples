@@ -38032,7 +38032,7 @@
 	
 	var _util2 = _interopRequireDefault(_util);
 	
-	var _keyboard = __webpack_require__(188);
+	var _keyboard = __webpack_require__(192);
 	
 	var _keyboard2 = _interopRequireDefault(_keyboard);
 	
@@ -38291,6 +38291,8 @@
 	
 	var _collision = __webpack_require__(187);
 	
+	var _collision2 = _interopRequireDefault(_collision);
+	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 	
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -38338,10 +38340,8 @@
 	
 	            // check if gob1 has been checked with gob2
 	            if (gob1._id !== gob2._id && !this.contactCache[gob1._id][gob2._id] && !this.contactCache[gob2._id][gob1._id]) {
-	              // if both are immobile, use regular SAT, otherwise movingSAT
-	              var method = gob1._velocity.isZero() && gob2._velocity.isZero() ? _collision.SAT : _collision.movingSAT;
 	
-	              if (method(gob1, gob2)) {
+	              if ((0, _collision2.default)(gob1, gob2)) {
 	                gob1.onCollide(gob2);
 	                gob2.onCollide(gob1);
 	              }
@@ -38372,29 +38372,136 @@
 	  value: true
 	});
 	
-	var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
-	
 	var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
 	// TODO: don't use this directly, refer to it from game so this is completely
 	//       separate
+	// import {Time} from '../constants/private';
 	
-	
-	exports.SAT = SAT;
-	exports.resolveStaticCollision = resolveStaticCollision;
-	exports.movingSAT = movingSAT;
+	exports.default = checkCollision;
 	
 	var _vector = __webpack_require__(5);
 	
 	var _vector2 = _interopRequireDefault(_vector);
 	
-	var _private = __webpack_require__(3);
+	var _SAT = __webpack_require__(188);
+	
+	var _SAT2 = _interopRequireDefault(_SAT);
+	
+	var _SAT3 = __webpack_require__(189);
+	
+	var _SAT4 = _interopRequireDefault(_SAT3);
+	
+	var _predictiveSAT = __webpack_require__(190);
+	
+	var _predictiveSAT2 = _interopRequireDefault(_predictiveSAT);
+	
+	var _predictiveSAT3 = __webpack_require__(191);
+	
+	var _predictiveSAT4 = _interopRequireDefault(_predictiveSAT3);
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 	
-	// https://www.geometrictools.com/Documentation/MethodOfSeparatingAxes.pdf
-	// See section on "moving objects"
+	function SAT(gob1, gob2) {
+	  var MTV = (0, _SAT2.default)(gob1, gob2);
+	  if (MTV == null) {
+	    return false;
+	  }
+	
+	  (0, _SAT4.default)(gob1, gob2, MTV);
+	  return true;
+	}
+	
+	function predictiveSAT(gob1, gob2) {
+	  var _detectPredictiveSAT = (0, _predictiveSAT2.default)(gob1, gob2),
+	      _detectPredictiveSAT2 = _slicedToArray(_detectPredictiveSAT, 2),
+	      TFirst = _detectPredictiveSAT2[0],
+	      normal = _detectPredictiveSAT2[1];
+	  // if it won't hit, or if it's already hitting, return false
+	
+	
+	  if (TFirst === Infinity || TFirst <= 0) {
+	    return false;
+	  }
+	
+	  if (normal == null) {
+	    throw new Error('Thought that there was a collision, but wasn\'t given a\n      normal!');
+	  }
+	
+	  // otherwise
+	  (0, _predictiveSAT4.default)(gob1, gob2, TFirst, normal);
+	  return true;
+	}
+	
+	function checkCollision(gob1, gob2) {
+	  // if both are immobile, use regular SAT, otherwise predictiveSAT
+	  var method = gob1._velocity.isZero() && gob2._velocity.isZero() ? SAT : predictiveSAT;
+	  // if neither are circle, use either SAT or predictiveSAT
+	
+	  // if one is a circle, one is a polygon, use special method
+	  // if both are circles, use special method
+	
+	  return method(gob1, gob2);
+	}
+
+/***/ },
+/* 188 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+	
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+	exports.default = SAT;
+	
+	var _vector = __webpack_require__(5);
+	
+	var _vector2 = _interopRequireDefault(_vector);
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+	
+	// TODO: for now it assumes both gobs are convex
+	// returns null if no collision, otherwise returns MTV
+	// http://www.metanetsoftware.com/technique/tutorialA.html
+	function SAT(gob1, gob2) {
+	  // get the absolute vertices
+	  var vertices1 = gob1.getVertices();
+	  var vertices2 = gob2.getVertices();
+	
+	  // gather the normals
+	  var normals1 = gob1.getNormals();
+	  var normals2 = gob2.getNormals();
+	
+	  var MTV = new _vector2.default(-Infinity, -Infinity);
+	
+	  // for each normal, project both shapes onto the normal. if they don't
+	  // intersect, then immediately return false.
+	  // otherwise return true at the end
+	  for (var i = 0; i < normals1.length; i++) {
+	    // $invariant: MTV will never be null
+	    MTV = checkProjectionOverlap(vertices1, vertices2, normals1[i], MTV);
+	    if (MTV == null) {
+	      return null;
+	    }
+	  }
+	
+	  for (var _i = 0; _i < normals2.length; _i++) {
+	    // $invariant: MTV will never be null
+	    MTV = checkProjectionOverlap(vertices1, vertices2, normals2[_i], MTV);
+	    if (MTV == null) {
+	      return null;
+	    }
+	  }
+	
+	  // TODO: adjust the gobs here instead of in collision engine
+	  // resolveStaticCollision(gob1, gob2, MTV);
+	
+	  return MTV;
+	}
 	
 	// if it overlaps, return the projection vector
+	
+	
 	function checkProjectionOverlap(vertices1, vertices2, vector, MTV) {
 	  var min1 = Infinity;
 	  var max1 = -Infinity;
@@ -38429,46 +38536,21 @@
 	    return MTV;
 	  }
 	}
+
+/***/ },
+/* 189 */
+/***/ function(module, exports) {
+
+	'use strict';
 	
-	// TODO: for now it assumes both gobs are convex
-	// returns null if no collision, otherwise returns MTV
-	// http://www.metanetsoftware.com/technique/tutorialA.html
-	function SAT(gob1, gob2) {
-	  // get the absolute vertices
-	  var vertices1 = gob1.getVertices();
-	  var vertices2 = gob2.getVertices();
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
 	
-	  // gather the normals
-	  var normals1 = gob1.getNormals();
-	  var normals2 = gob2.getNormals();
+	var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
 	
-	  var MTV = new _vector2.default(-Infinity, -Infinity);
+	exports.default = resolveStaticCollision;
 	
-	  // for each normal, project both shapes onto the normal. if they don't
-	  // intersect, then immediately return false.
-	  // otherwise return true at the end
-	  for (var i = 0; i < normals1.length; i++) {
-	    // $invariant: MTV will never be null
-	    MTV = checkProjectionOverlap(vertices1, vertices2, normals1[i], MTV);
-	    if (MTV == null) {
-	      return false;
-	    }
-	  }
-	
-	  for (var _i = 0; _i < normals2.length; _i++) {
-	    // $invariant: MTV will never be null
-	    MTV = checkProjectionOverlap(vertices1, vertices2, normals2[_i], MTV);
-	    if (MTV == null) {
-	      return false;
-	    }
-	  }
-	
-	  // TODO: adjust the gobs here instead of in collision engine
-	  // $invariant MTV will have returned by now if null
-	  resolveStaticCollision(gob1, gob2, MTV);
-	
-	  return true;
-	}
 	
 	/* resolve a collision between two non-moving objects (project them out) */
 	function resolveStaticCollision(gob1, gob2, MTV) {
@@ -38490,16 +38572,237 @@
 	  right.position.x += MTV.x;
 	  bottom.position.y -= MTV.y;
 	}
+
+/***/ },
+/* 190 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+	
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+	
+	var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
+	
+	exports.default = movingSAT;
+	
+	var _vector = __webpack_require__(5);
+	
+	var _vector2 = _interopRequireDefault(_vector);
+	
+	var _private = __webpack_require__(3);
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+	
+	// https://www.geometrictools.com/Documentation/MethodOfSeparatingAxes.pdf
+	// See section on "moving objects"
+	// Returns TFirst, first time of collision. If no collision, returns Infinity
+	// NOTE: Infinity is not exactly accurate since it will collide in TFirst time,
+	// but in this case it just means there is no collision at the next time step
+	function movingSAT(gob1, gob2) {
+	  // get the absolute vertices
+	  var vertices1 = gob1.getVertices();
+	
+	  var vertices2 = gob2.getVertices();
+	
+	  // velocity
+	  var velocity = _vector2.default.Difference(gob2._velocity, gob1._velocity);
+	
+	  // gather the normals
+	  var normals = gob1.getNormals().concat(gob2.getNormals());
+	
+	  // const MTV: Vector2 = new Vector2(-Infinity, -Infinity);
+	
+	  // we are calculating in terms of a single timestep
+	  var TMax = _private.Time.dts;
+	  var TFirst = 0;
+	  var TLast = Infinity;
+	
+	  // TODO: do we need this?
+	  var Length = 0;Length;
+	
+	  // if there has been a collision, calculate how far it's gone
+	  var TElapsed = 0;TElapsed;
+	  var normal = void 0;
+	
+	  // for each normal, project both shapes onto the normal.
+	  // if they don't intersect, then immediately return [Infinity, null].
+	  // otherwise return true at the end
+	
+	  var _loop = function _loop(i) {
+	    // speed is the projection of the speed onto the normal
+	    var speed = _vector2.default.ProjectScalar(velocity, normals[i]);
+	    var T = void 0;
+	
+	    var min0 = Infinity;
+	    var max0 = -Infinity;
+	    var min1 = Infinity;
+	    var max1 = -Infinity;
+	
+	    // TODO: do we need this?
+	    var min0Index = Infinity;min0Index;
+	    var max0Index = -Infinity;max0Index;
+	    var min1Index = Infinity;min1Index;
+	    var max1Index = -Infinity;max1Index;
+	
+	    // get max and min of collison
+	    vertices1.map(function (vertex, index) {
+	      var val = _vector2.default.ProjectScalar(vertex, normals[i]);
+	      min0 = Math.min(min0, val);
+	      if (val > max0) {
+	        max0 = val;
+	        max0Index = index;
+	      }
+	    });
+	
+	    vertices2.map(function (vertex, index) {
+	      var val = _vector2.default.ProjectScalar(vertex, normals[i]);
+	      min1 = Math.min(min1, val);
+	      if (val > max1) {
+	        max1 = val;
+	        max1Index = index;
+	      }
+	    });
+	
+	    if (max1 < min0) {
+	      if (speed <= 0) {
+	        return {
+	          v: [Infinity, null]
+	        };
+	      }
+	      T = (min0 - max1) / speed;
+	      if (T > TFirst) {
+	        TFirst = T;
+	        Length = min0 - max1;
+	        normal = normals[i];
+	      }
+	      if (TFirst > TMax) {
+	        return {
+	          v: [Infinity, null]
+	        };
+	      }
+	      T = (max0 - min1) / speed;
+	      if (T < TLast) {
+	        TLast = T;
+	      }
+	      if (TFirst > TLast) {
+	        return {
+	          v: [Infinity, null]
+	        };
+	      }
+	    } else if (max0 < min1) {
+	      if (speed >= 0) {
+	        return {
+	          v: [Infinity, null]
+	        };
+	      }
+	      T = (max0 - min1) / speed;
+	      if (T > TFirst) {
+	        TFirst = T;
+	        Length = max0 - min1;
+	        normal = normals[i];
+	      }
+	      if (TFirst > TMax) {
+	        return {
+	          v: [Infinity, null]
+	        };
+	      }
+	      T = (min0 - max1) / speed;
+	      if (T < TLast) {
+	        TLast = T;
+	      }
+	      if (TFirst > TLast) {
+	        return {
+	          v: [Infinity, null]
+	        };
+	      }
+	    } else {
+	      if (speed > 0) {
+	        T = (max0 - min1) / speed;
+	        if (T < TLast) {
+	          TLast = T;
+	        }
+	        if (TFirst > TLast) {
+	          return {
+	            v: [Infinity, null]
+	          };
+	        }
+	      } else if (speed < 0) {
+	        T = (min0 - max1) / speed;
+	        if (T < TLast) {
+	          TLast = T;
+	        }
+	        if (TFirst > TLast) {
+	          return {
+	            v: [Infinity, null]
+	          };
+	        }
+	      }
+	    }
+	
+	    // set TElapsed
+	    // the minimum of the two possible overlaps, to determine actual overlap
+	    if (speed !== 0) {
+	      TElapsed = Math.min(Math.abs(max0 - min1), Math.abs(max1 - min0)) / Math.abs(speed);
+	    }
+	  };
+	
+	  for (var i = 0; i < normals.length; i++) {
+	    var _ret = _loop(i);
+	
+	    if ((typeof _ret === 'undefined' ? 'undefined' : _typeof(_ret)) === "object") return _ret.v;
+	  }
+	
+	  return [TFirst, normal];
+	}
+
+/***/ },
+/* 191 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+	
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+	exports.default = resolvePredictiveSAT;
+	
+	var _vector = __webpack_require__(5);
+	
+	var _vector2 = _interopRequireDefault(_vector);
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+	
+	function resolvePredictiveSAT(gob1, gob2, TFirst, normal) {
+	  // collided! we limit the gob resolution to this method, to preserve
+	  // modularity
+	  if (TFirst !== 0) {
+	    // it's going to collide with this next move. in this case, we need to
+	    // adjust so it doesn't overshoot.
+	
+	    // TODO: THIS IS A HACK. we set it to be at TFirst - 0.0001 so that there
+	    // isn't going to be an overlap
+	    gob1.position.y = gob1._position.y + gob1._velocity.y * (TFirst - 0.0001);
+	    gob1.position.x = gob1._position.x + gob1._velocity.x * (TFirst - 0.0001);
+	
+	    gob2.position.y = gob2._position.y + gob2._velocity.y * (TFirst - 0.0001);
+	    gob2.position.x = gob2._position.x + gob2._velocity.x * (TFirst - 0.0001);
+	
+	    adjustPhysicsVelocity(gob1, gob2, normal);
+	
+	    // TODO: a leftover of (Time.dts - (TFirst - 0.0001)) of new velocity for
+	    // each will be lost
+	  }
+	}
 	
 	// TODO: Have restitution ONLY BE APPLIED for normal velocities
 	// ALSO TODO: Have restitution be applied PER OBJEcT. It's just easier to
 	// think about that way. if you don't want an object to have energy lost in
 	// collistion, just set the mass to 0!
 	// http://vobarian.com/collisions/2dcollisions2.pdf
+	
 	function adjustPhysicsVelocity(gob1, gob2, normal) {
-	  if (normal == null) {
-	    throw new Error('Tried to adjust post-collision velocities, but wasn\'t\n      given a normal!');
-	  }
 	  // tangent is the normal of the normal
 	  var tangent = normal.orthol();
 	  // const unitNormal = Vector2.Normalized(normal)
@@ -38548,187 +38851,9 @@
 	  gob2.velocity.x = newVelocity2.x;
 	  gob2.velocity.y = newVelocity2.y;
 	}
-	
-	// https://www.geometrictools.com/Documentation/MethodOfSeparatingAxes.pdf
-	function movingSAT(gob1, gob2) {
-	  // get the absolute vertices
-	  var vertices1 = gob1.getVertices();
-	
-	  var vertices2 = gob2.getVertices();
-	
-	  // velocity
-	  var velocity = _vector2.default.Difference(gob2._velocity, gob1._velocity);
-	
-	  // gather the normals
-	  var normals = gob1.getNormals().concat(gob2.getNormals());
-	
-	  // const MTV: Vector2 = new Vector2(-Infinity, -Infinity);
-	
-	  // we are calculating in terms of a single timestep
-	  var TMax = _private.Time.dts;
-	  var TFirst = 0;
-	  var TLast = Infinity;
-	
-	  // TODO: do we need this?
-	  var Length = 0;Length;
-	
-	  // if there has been a collision, calculate how far it's gone
-	  var TElapsed = 0;TElapsed;
-	  var normal = void 0;
-	
-	  // for each normal, project both shapes onto the normal.
-	  // if they don't intersect, then immediately return false.
-	  // otherwise return true at the end
-	
-	  var _loop = function _loop(i) {
-	    // speed is the projection of the speed onto the normal
-	    var speed = _vector2.default.ProjectScalar(velocity, normals[i]);
-	    var T = void 0;
-	
-	    var min0 = Infinity;
-	    var max0 = -Infinity;
-	    var min1 = Infinity;
-	    var max1 = -Infinity;
-	
-	    // TODO: do we need this?
-	    var min0Index = Infinity;min0Index;
-	    var max0Index = -Infinity;max0Index;
-	    var min1Index = Infinity;min1Index;
-	    var max1Index = -Infinity;max1Index;
-	
-	    // get max and min of collison
-	    vertices1.map(function (vertex, index) {
-	      var val = _vector2.default.ProjectScalar(vertex, normals[i]);
-	      min0 = Math.min(min0, val);
-	      if (val > max0) {
-	        max0 = val;
-	        max0Index = index;
-	      }
-	    });
-	
-	    vertices2.map(function (vertex, index) {
-	      var val = _vector2.default.ProjectScalar(vertex, normals[i]);
-	      min1 = Math.min(min1, val);
-	      if (val > max1) {
-	        max1 = val;
-	        max1Index = index;
-	      }
-	    });
-	
-	    if (max1 < min0) {
-	      if (speed <= 0) {
-	        return {
-	          v: false
-	        };
-	      }
-	      T = (min0 - max1) / speed;
-	      if (T > TFirst) {
-	        TFirst = T;
-	        Length = min0 - max1;
-	        normal = normals[i];
-	      }
-	      if (TFirst > TMax) {
-	        return {
-	          v: false
-	        };
-	      }
-	      T = (max0 - min1) / speed;
-	      if (T < TLast) {
-	        TLast = T;
-	      }
-	      if (TFirst > TLast) {
-	        return {
-	          v: false
-	        };
-	      }
-	    } else if (max0 < min1) {
-	      if (speed >= 0) {
-	        return {
-	          v: false
-	        };
-	      }
-	      T = (max0 - min1) / speed;
-	      if (T > TFirst) {
-	        TFirst = T;
-	        Length = max0 - min1;
-	        normal = normals[i];
-	      }
-	      if (TFirst > TMax) {
-	        return {
-	          v: false
-	        };
-	      }
-	      T = (min0 - max1) / speed;
-	      if (T < TLast) {
-	        TLast = T;
-	      }
-	      if (TFirst > TLast) {
-	        return {
-	          v: false
-	        };
-	      }
-	    } else {
-	      if (speed > 0) {
-	        T = (max0 - min1) / speed;
-	        if (T < TLast) {
-	          TLast = T;
-	        }
-	        if (TFirst > TLast) {
-	          return {
-	            v: false
-	          };
-	        }
-	      } else if (speed < 0) {
-	        T = (min0 - max1) / speed;
-	        if (T < TLast) {
-	          TLast = T;
-	        }
-	        if (TFirst > TLast) {
-	          return {
-	            v: false
-	          };
-	        }
-	      }
-	    }
-	
-	    // set TElapsed
-	    // the minimum of the two possible overlaps, to determine actual overlap
-	    if (speed !== 0) {
-	      TElapsed = Math.min(Math.abs(max0 - min1), Math.abs(max1 - min0)) / Math.abs(speed);
-	    }
-	  };
-	
-	  for (var i = 0; i < normals.length; i++) {
-	    var _ret = _loop(i);
-	
-	    if ((typeof _ret === 'undefined' ? 'undefined' : _typeof(_ret)) === "object") return _ret.v;
-	  }
-	
-	  // collided! we limit the gob resolution to this method, to preserve
-	  // modularity
-	  if (TFirst !== 0) {
-	    // it's going to collide with this next move. in this case, we need to
-	    // adjust so it doesn't overshoot.
-	
-	    // TODO: THIS IS A HACK. we set it to be at TFirst - 0.0001 so that there
-	    // isn't going to be an overlap
-	    gob1.position.y = gob1._position.y + gob1._velocity.y * (TFirst - 0.0001);
-	    gob1.position.x = gob1._position.x + gob1._velocity.x * (TFirst - 0.0001);
-	
-	    gob2.position.y = gob2._position.y + gob2._velocity.y * (TFirst - 0.0001);
-	    gob2.position.x = gob2._position.x + gob2._velocity.x * (TFirst - 0.0001);
-	
-	    adjustPhysicsVelocity(gob1, gob2, normal);
-	
-	    // TODO: a leftover of (Time.dts - (TFirst - 0.0001)) of new velocity for
-	    // each will be lost
-	  }
-	
-	  return true;
-	}
 
 /***/ },
-/* 188 */
+/* 192 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -38741,7 +38866,7 @@
 	
 	var _public = __webpack_require__(184);
 	
-	var _key = __webpack_require__(189);
+	var _key = __webpack_require__(193);
 	
 	var _key2 = _interopRequireDefault(_key);
 	
@@ -38843,7 +38968,7 @@
 	exports.default = Keyboard;
 
 /***/ },
-/* 189 */
+/* 193 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
