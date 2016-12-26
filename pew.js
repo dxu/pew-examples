@@ -198,8 +198,8 @@
 	  }, {
 	    key: '_getBuckets',
 	    value: function _getBuckets(gob) {
-	      var xVel = gob._velocity.x * _private.Time.dts;
-	      var yVel = gob._velocity.y * _private.Time.dts;
+	      var xVel = gob.velocity.x * _private.Time.dts;
+	      var yVel = gob.velocity.y * _private.Time.dts;
 	
 	      var minX = gob._aabb[0].x;
 	      var maxX = gob._aabb[1].x;
@@ -306,8 +306,6 @@
 	
 	var _util2 = _interopRequireDefault(_util);
 	
-	var _private = __webpack_require__(3);
-	
 	var _vector = __webpack_require__(5);
 	
 	var _vector2 = _interopRequireDefault(_vector);
@@ -315,6 +313,8 @@
 	var _pixi = __webpack_require__(6);
 	
 	var PIXI = _interopRequireWildcard(_pixi);
+	
+	var _private = __webpack_require__(3);
 	
 	function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 	
@@ -324,113 +324,55 @@
 	
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 	
-	/*
-	 * A generic game object (gob) used as a basis for all objects instantiated
-	 * with Pew
-	 * Should be extended to add functionality and overwrite collision methods
-	 *
-	 * @param opts
-	 *   Possible opts:
-	 *     - collidable
-	 *     - position vector {x, y}
-	 *     - velocity (vector) {x, y} - generally -1 <-> +1
-	 *     - data
-	 *
-	 * IMPORTANT: Every game object contains a destroy() method, which will manually
-	 *            remove all references to itself from objects (for example, the
-	 *            spatial hash) that may contain it by referencing the `refs`
-	 *            attribute and calling removeGob(). If you are using a custom data
-	 *            structure to contain these gobs, you should be adding
-	 *            CustomDataStructureInstanceX into the `refs` attribute of this gob
-	 *            within `CustomDataStructureInstanceX.add(gob)`, and implementing
-	 *            `CustomDataStructureInstanceX._removeGob(gob)` to remove any
-	 *            references to prevent memory leaks.
-	 *
-	 * NOTE: Every Gob will have an AABB (in terms of a center point and width +
-	 *       height), and a set of polygon points upon initialization (assuming
-	 *       valid inputs). You can specify the center point and the width+height
-	 *       within the options, or pass in a set of vertices. The set of polygon
-	 *       points are required for the SAT collision detection, and the AABB
-	 *       (in terms of width/height/center) is required for the Spatial Hash
-	 *       (to simplify calculating buckets)
-	 *
-	 * TODO: address how circles fit into the above. Won't need the set of polygon
-	 *       points unless you create a polygon out of a circle. Will probably need
-	 *       some separate representation for the voronoi algorithm. AABB won't be a
-	 *       problem.
-	 *
-	 * this.points = [Vector2, Vector2...]
-	 *
-	 * NOTE: position should be relative to the center!!
-	 *
-	 */
-	
 	var Gob = function () {
-	
-	  // NOTE: The parent container should be responsible for adding this to a
-	  //       stage. this should have
-	  // no knowledge of the game, spatial hash, or the stage
-	
-	  // sprite: PIXI.Sprite;
-	  // velocity at next cycle
-	  // position at the next cycle
-	  // next, calculated according to relative
-	  // specified relative to the position
+	  // also, the center of mass
 	  function Gob(game, opts) {
+	    var _this = this;
+	
 	    _classCallCheck(this, Gob);
 	
-	    // Generate uuid
 	    this._id = _util2.default.uuid();
 	    this._destroyed = false;
-	
-	    // default to 1
 	    this.mass = opts.mass != null ? opts.mass : 1;
 	    this.friction = opts.friction != null ? opts.friction : 1;
 	    this.bounce = opts.bounce != null ? opts.bounce : 1;
-	
-	    this._position = new _vector2.default(0, 0);
-	    this.position = new _vector2.default(0, 0);
-	
-	    // pairwise differences. The normals can be calculated by negating the edge
-	    this._edges = [];
 	    this._normals = [];
+	    this.position = new _vector2.default(0, 0);
+	    this.angle = opts.angle || 0;
+	    this.angularVelocity = opts.angularVelocity || 0;
 	
-	    // TODO: enforce vector2 somehow. probably have to rely on duck typing
-	
-	    // A gob can have a number of shapes: a 2D AABB, a polygon, or a circle.
 	    if (opts.position) {
-	      this._position.x = opts.position.x;
-	      this._position.y = opts.position.y;
 	      this.position.x = opts.position.x;
 	      this.position.y = opts.position.y;
-	      // 2D AABB consists of a this._position, and a this.width and this.height
+	      // 2D AABB consists of a this.position, and a this.width and this.height
 	      if (opts.width && opts.height) {
 	        this.width = opts.width;
 	        this.height = opts.height;
+	        this.relativeVertices = [new _vector2.default(-this.width / 2, -this.height / 2), new _vector2.default(this.width / 2, -this.height / 2), new _vector2.default(this.width / 2, this.height / 2), new _vector2.default(-this.width / 2, this.height / 2)];
 	      } else if (opts.relativeVertices) {
 	        this.relativeVertices = opts.relativeVertices;
 	      } else {
-	        // A circle consists of a this._position, and a this.radius
+	        // A circle consists of a this.position, and a this.radius
 	        // TODO: not yet implemented! Implementing circle collision detection
 	        //       requires voronoi regions or some other way to convert the
 	        //       geometry into polygons
 	        throw new Error('Invalid game object. A position was given, but neither\n                         a radius nor [width && height] were given');
 	      }
-	      this.calculateVertices();
-	      this.updateNormals();
 	    } else {
 	      throw new Error('Invalid game object. No vertices or position provided.');
 	    }
+	    // set up the initial angle
+	    this.relativeVertices.map(function (vertex) {
+	      return vertex.rotate(_this.angle);
+	    });
+	    this.calculateVertices();
+	    this.updateNormals();
 	
 	    // defaults to no movement
 	    this.maxVelocity = opts.maxVelocity || new _vector2.default(0, 0);
 	
-	    // defaults
-	    this._velocity = opts.velocity || new _vector2.default(0, 0);
-	    this.velocity = new _vector2.default(this._velocity.x, this._velocity.y);
+	    this.velocity = opts.velocity || new _vector2.default(0, 0);
 	    this.acceleration = opts.acceleration || new _vector2.default(0, 0);
-	
-	    // TODO: do we need scalar speed?
 	
 	    // generic optional data
 	    this.data = opts.data;
@@ -442,7 +384,6 @@
 	    this.game = game;
 	
 	    // TODO: completely separate sprite and image into a different class
-	    this.data.sprite.position.set(this._position.x, this._position.y);
 	
 	    // default to 0.5, 0.5
 	    // TODO: allow this to be customized
@@ -450,6 +391,8 @@
 	
 	    // TODO: allow separately setting the sprite width/height
 	    this.data.sprite.scale.set(this.width / this.data.sprite.width, this.height / this.data.sprite.height);
+	
+	    this.updateSprite();
 	
 	    // TODO: add handler for checking if a key is being pressed. SHOULD THIS BE
 	    //       HANDLED BY THE GAME?
@@ -460,107 +403,13 @@
 	
 	    if (this.debug) {
 	      this._setupDebug(game);
+	      this._debug();
 	    }
 	  }
-	
-	  // recalculate the vertices and normals based on relativeVertices or
-	  // width/height
-	
-	  // TODO: clean this up
-	  // current velocity
-	  // current position
-	  // current, calculated according to relative
-	
-	  // AABB is required for calculating spatial hash
+	  // everything is derived from relativeVertices
 	
 	
 	  _createClass(Gob, [{
-	    key: 'calculateVertices',
-	    value: function calculateVertices() {
-	      var _this = this;
-	
-	      // if there is a width and height, then it becomes AABB
-	      if (this.width && this.height) {
-	        this._vertices = this.vertices = this._aabb = this.calculateAABB();
-	        return;
-	      }
-	      // otherwise, update absolute vertices, and
-	      this._vertices = this.relativeVertices.map(function (vertex) {
-	        return _vector2.default.Sum(vertex, _this._position);
-	      });
-	      // otherwise, update absolute vertices, and
-	      this.vertices = this.relativeVertices.map(function (vertex) {
-	        return _vector2.default.Sum(vertex, _this.position);
-	      });
-	      this._aabb = this.calculateAABBFromVertices();
-	    }
-	
-	    // update the vertices relative to center. Will update AABB together with the
-	    // vertices
-	    // TODO: in the future, support getting passed Array<Vector2> and calculating
-	    // from given vertices
-	
-	  }, {
-	    key: 'calculateAABB',
-	    value: function calculateAABB() {
-	      // the AABB. Goes from TL, clockwise
-	      var aabb = [new _vector2.default(0, 0), // TL
-	      new _vector2.default(0, 0), // TR
-	      new _vector2.default(0, 0), // BR
-	      new _vector2.default(0, 0)];
-	
-	      // TL, BL
-	      aabb[0].x = aabb[3].x = this._position.x - this.width / 2;
-	      // TR, BR
-	      aabb[1].x = aabb[2].x = this._position.x + this.width / 2;
-	
-	      // TL, BL
-	      aabb[0].y = aabb[1].y = this._position.y - this.height / 2;
-	      // TR, BR
-	      aabb[2].y = aabb[3].y = this._position.y + this.height / 2;
-	
-	      return aabb;
-	    }
-	  }, {
-	    key: 'calculateAABBFromVertices',
-	    value: function calculateAABBFromVertices() {
-	      var minX = 0;
-	      var minY = 0;
-	      var maxX = 0;
-	      var maxY = 0;
-	      // go through vertices
-	      this._vertices.map(function (vertex) {
-	        minX = Math.min(minX, vertex.x);
-	        minY = Math.min(minX, vertex.y);
-	        maxX = Math.max(minX, vertex.x);
-	        maxY = Math.max(minX, vertex.y);
-	      });
-	      // the AABB. Goes from TL, clockwise
-	      var aabb = [new _vector2.default(minY, minX), // TL
-	      new _vector2.default(minY, maxX), // TR
-	      new _vector2.default(maxY, minX), // BR
-	      new _vector2.default(maxY, maxX)];
-	      return aabb;
-	    }
-	  }, {
-	    key: 'updateNormals',
-	    value: function updateNormals() {
-	      var _this2 = this;
-	
-	      this._edges = this._vertices.map(function (vertex, index) {
-	        return _vector2.default.Difference(_this2._vertices[(index + 1) % _this2._vertices.length], vertex);
-	      });
-	
-	      this._normals = this._edges.map(function (vertex) {
-	        return vertex.orthol();
-	      });
-	    }
-	  }, {
-	    key: '_getVertices',
-	    value: function _getVertices() {
-	      return this._vertices;
-	    }
-	  }, {
 	    key: 'getVertices',
 	    value: function getVertices() {
 	      return this.vertices;
@@ -594,7 +443,7 @@
 	  }, {
 	    key: 'destroy',
 	    value: function destroy() {
-	      var _this3 = this;
+	      var _this2 = this;
 	
 	      // We still need to set state for whether or not this object is destroyed
 	      // already
@@ -609,29 +458,108 @@
 	      // onCollide, the objects gets destroyed before the other objects get to use
 	      // it in their onCollide
 	      window.requestAnimationFrame(function () {
-	        for (var index in _this3.refs) {
-	          _this3.refs[index].removeGob(_this3);
-	          delete _this3.refs[index];
+	        for (var index in _this2.refs) {
+	          _this2.refs[index].removeGob(_this2);
+	          delete _this2.refs[index];
 	        }
 	
 	        // remove PIXI sprite from its parent
-	        _this3.data.sprite.parent.removeChild(_this3.data.sprite);
+	        _this2.data.sprite.parent.removeChild(_this2.data.sprite);
 	
 	        // TODO: I don't think I actually need to do any of the following
-	        delete _this3._id;
-	        delete _this3.data;
-	        delete _this3.vertices;
-	        delete _this3.refs;
-	        delete _this3._position;
+	        delete _this2._id;
+	        delete _this2.data;
+	        delete _this2.vertices;
+	        delete _this2.refs;
+	        delete _this2.position;
 	      });
 	      this._destroyed = true;
 	    }
+	
+	    // recalculate the vertices and normals based on relativeVertices or
+	    // width/height
+	
 	  }, {
-	    key: '_preUpdate',
-	    value: function _preUpdate() {
-	      if (this.debug) {
-	        this._debugData.previousPosition = this._position.clone();
+	    key: 'calculateVertices',
+	    value: function calculateVertices() {
+	      var _this3 = this;
+	
+	      // if there is a width and height, and isn't rotating/rotated then use AABB
+	      if (this.width && this.height && this.angularVelocity === 0 && this.angle === 0) {
+	        this.vertices = this._aabb = this.calculateAABB();
+	        return;
 	      }
+	      // otherwise, update absolute vertices, and
+	      this.vertices = this.relativeVertices.map(function (vertex) {
+	        return _vector2.default.Sum(vertex, _this3.position);
+	      });
+	      this._aabb = this.calculateAABBFromVertices();
+	    }
+	
+	    // update the vertices relative to center. Will update AABB together with the
+	    // vertices
+	
+	  }, {
+	    key: 'calculateAABB',
+	    value: function calculateAABB() {
+	      // the AABB. Goes from TL, clockwise
+	      var aabb = [new _vector2.default(0, 0), // TL
+	      new _vector2.default(0, 0), // TR
+	      new _vector2.default(0, 0), // BR
+	      new _vector2.default(0, 0)];
+	
+	      // TL, BL
+	      aabb[0].x = aabb[3].x = this.position.x - this.width / 2;
+	      // TR, BR
+	      aabb[1].x = aabb[2].x = this.position.x + this.width / 2;
+	
+	      // TL, BL
+	      aabb[0].y = aabb[1].y = this.position.y - this.height / 2;
+	      // TR, BR
+	      aabb[2].y = aabb[3].y = this.position.y + this.height / 2;
+	
+	      return aabb;
+	    }
+	  }, {
+	    key: 'calculateAABBFromVertices',
+	    value: function calculateAABBFromVertices() {
+	      var minX = 0;
+	      var minY = 0;
+	      var maxX = 0;
+	      var maxY = 0;
+	      // go through vertices
+	      this.vertices.map(function (vertex) {
+	        minX = Math.min(minX, vertex.x);
+	        minY = Math.min(minX, vertex.y);
+	        maxX = Math.max(minX, vertex.x);
+	        maxY = Math.max(minX, vertex.y);
+	      });
+	      // the AABB. Goes from TL, clockwise
+	      var aabb = [new _vector2.default(minY, minX), // TL
+	      new _vector2.default(minY, maxX), // TR
+	      new _vector2.default(maxY, minX), // BR
+	      new _vector2.default(maxY, maxX)];
+	      return aabb;
+	    }
+	  }, {
+	    key: 'updateNormals',
+	    value: function updateNormals() {
+	      var _this4 = this;
+	
+	      this._edges = this.vertices.map(function (vertex, index) {
+	        return _vector2.default.Difference(_this4.vertices[(index + 1) % _this4.vertices.length], vertex);
+	      });
+	
+	      this._normals = this._edges.map(function (vertex) {
+	        return vertex.orthol();
+	      });
+	    }
+	  }, {
+	    key: '_setupDebug',
+	    value: function _setupDebug(game) {
+	      this._debugData = {};
+	      this._debugData.outline = new PIXI.Graphics();
+	      // Note: the outline will be added to the stage by the game object!
 	    }
 	
 	    // this is the update that will get called privately
@@ -642,16 +570,15 @@
 	  }, {
 	    key: '_update',
 	    value: function _update() {
-	      // update velocity based on acceleration
-	      this._position.x = this.position.x;
-	      this._position.y = this.position.y;
-	
-	      this._velocity.x = this.velocity.x;
-	      this._velocity.y = this.velocity.y;
 	
 	      // this will get overridden later if the engine detects there is a collision
-	      this.position.x = this._position.x + this._velocity.x * _private.Time.dts;
-	      this.position.y = this._position.y + this._velocity.y * _private.Time.dts;
+	      this.position.x = this.position.x + this.velocity.x * _private.Time.dts;
+	      this.position.y = this.position.y + this.velocity.y * _private.Time.dts;
+	
+	      this.velocity.x = this.velocity.x + this.acceleration.x * _private.Time.dts;
+	      this.velocity.y = this.velocity.y + this.acceleration.y * _private.Time.dts;
+	
+	      this.angle += this.angularVelocity;
 	
 	      // same with derived values
 	      this.updateDerived();
@@ -667,8 +594,8 @@
 	    // this is where you add post checks
 	
 	  }, {
-	    key: '_postUpdate',
-	    value: function _postUpdate() {
+	    key: '_postCollisionUpdate',
+	    value: function _postCollisionUpdate() {
 	      this.updateSprite();
 	      // TODO: ideally we shouldn't even have to run this check in production :(
 	      // if this.debug is set, turn on debug mode
@@ -677,16 +604,15 @@
 	      }
 	    }
 	  }, {
-	    key: '_postCollisionUpdate',
-	    value: function _postCollisionUpdate() {}
-	  }, {
-	    key: '_setupDebug',
-	    value: function _setupDebug(game) {
-	      this._debugData = {};
-	      this._debugData.outline = new PIXI.Graphics();
+	    key: '_debug',
+	    value: function _debug() {
+	      this._debugData.outline.clear();
+	      // update the position of the outline
+	      this._debugData.outline.position.x = this.position.x;
+	      this._debugData.outline.position.y = this.position.y;
 	      this._debugData.outline.lineStyle(1, 0x000000, 1);
 	
-	      var a = this._vertices.reduce(function (memo, vertex, index, arr) {
+	      var path = this.relativeVertices.reduce(function (memo, vertex, index, arr) {
 	        memo.push(vertex.x);
 	        memo.push(vertex.y);
 	        if (index === arr.length - 1) {
@@ -695,17 +621,7 @@
 	        }
 	        return memo;
 	      }, []);
-	      this._debugData.outline.drawPolygon(a);
-	
-	      this._debugData.previousPosition = this._position.clone();
-	      // Note: the outline will be added to the stage by the game object!
-	    }
-	  }, {
-	    key: '_debug',
-	    value: function _debug() {
-	      // update the position of the outline
-	      this._debugData.outline.position.x += this._position.x - this._debugData.previousPosition.x;
-	      this._debugData.outline.position.y += this._position.y - this._debugData.previousPosition.y;
+	      this._debugData.outline.drawPolygon(path);
 	    }
 	
 	    // THIS SHOULD BE USED ONLY IF YOU DO NOT WANT TO RELY ON THE AUTOMATIC
@@ -715,8 +631,8 @@
 	  }, {
 	    key: 'updatePosition',
 	    value: function updatePosition(xDiff, yDiff) {
-	      this._position.x += xDiff;
-	      this._position.y += yDiff;
+	      this.position.x += xDiff;
+	      this.position.y += yDiff;
 	    }
 	
 	    // updates the sprite's position. Should be called after committing position
@@ -724,8 +640,8 @@
 	  }, {
 	    key: 'updateSprite',
 	    value: function updateSprite() {
-	      this.data.sprite.position.y = this._position.y;
-	      this.data.sprite.position.x = this._position.x;
+	      this.data.sprite.position.set(this.position.x, this.position.y);
+	      this.data.sprite.rotation = this.angle * (Math.PI / 180);
 	    }
 	
 	    // TODO: reuse the vectors (add the differences when it moves instead of
@@ -734,7 +650,13 @@
 	  }, {
 	    key: 'updateDerived',
 	    value: function updateDerived() {
+	      var _this5 = this;
+	
+	      this.relativeVertices.map(function (vertex) {
+	        return vertex.rotate(_this5.angularVelocity);
+	      });
 	      this.calculateVertices();
+	      this.updateNormals();
 	    }
 	  }]);
 	
@@ -747,7 +669,7 @@
 /* 5 */
 /***/ function(module, exports) {
 
-	"use strict";
+	'use strict';
 	
 	Object.defineProperty(exports, "__esModule", {
 	  value: true
@@ -758,8 +680,6 @@
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 	
 	var Vector2 = function () {
-	
-	  /* TODO: can i just inline the static functions? */
 	  function Vector2(x, y) {
 	    _classCallCheck(this, Vector2);
 	
@@ -767,8 +687,11 @@
 	    this.y = y;
 	  }
 	
+	  /* TODO: can i just inline the static functions? */
+	
+	
 	  _createClass(Vector2, [{
-	    key: "add",
+	    key: 'add',
 	    value: function add() {
 	      var x = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 0;
 	      var y = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
@@ -778,7 +701,7 @@
 	      return this;
 	    }
 	  }, {
-	    key: "subtract",
+	    key: 'subtract',
 	    value: function subtract() {
 	      var x = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 0;
 	      var y = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
@@ -788,7 +711,7 @@
 	      return this;
 	    }
 	  }, {
-	    key: "multiply",
+	    key: 'multiply',
 	    value: function multiply() {
 	      var x = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 1;
 	      var y = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 1;
@@ -798,7 +721,7 @@
 	      return this;
 	    }
 	  }, {
-	    key: "divide",
+	    key: 'divide',
 	    value: function divide() {
 	      var x = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 1;
 	      var y = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 1;
@@ -808,22 +731,22 @@
 	      return this;
 	    }
 	  }, {
-	    key: "isZero",
+	    key: 'isZero',
 	    value: function isZero() {
 	      return this.x === 0 && this.y === 0;
 	    }
 	  }, {
-	    key: "mag",
+	    key: 'mag',
 	    value: function mag() {
 	      return Math.sqrt(this.x * this.x + this.y * this.y);
 	    }
 	  }, {
-	    key: "dot",
+	    key: 'dot',
 	    value: function dot(vector) {
 	      return this.x * vector.x + this.y * vector.y;
 	    }
 	  }, {
-	    key: "normalize",
+	    key: 'normalize',
 	    value: function normalize() {
 	      var mag = this.mag();
 	      this.x /= mag;
@@ -831,21 +754,21 @@
 	      return this;
 	    }
 	  }, {
-	    key: "toString",
+	    key: 'toString',
 	    value: function toString() {
-	      return "(" + this.x + ", " + this.y + ")";
+	      return '(' + this.x + ', ' + this.y + ')';
 	    }
 	  }, {
-	    key: "print",
+	    key: 'print',
 	    value: function print() {
 	      // eslint-disable-next-line no-console
-	      console.log("(" + this.x + ", " + this.y + ")");
+	      console.log('(' + this.x + ', ' + this.y + ')');
 	    }
 	
 	    // returns a new vector orthogonal to this vector
 	
 	  }, {
-	    key: "orthor",
+	    key: 'orthor',
 	    value: function orthor() {
 	      return new Vector2(-this.y, this.x);
 	    }
@@ -853,7 +776,7 @@
 	    // returns a new vector orthogonal to this vector
 	
 	  }, {
-	    key: "orthol",
+	    key: 'orthol',
 	    value: function orthol() {
 	      return new Vector2(this.y, -this.x);
 	    }
@@ -861,9 +784,40 @@
 	    // return a clone of this vector
 	
 	  }, {
-	    key: "clone",
+	    key: 'clone',
 	    value: function clone() {
 	      return new Vector2(this.x, this.y);
+	    }
+	
+	    // rotate this Vector4 `angle` degrees around `point`
+	    // Rotation matrix;
+	    // [
+	    //   [cos(theta) -sin(theta)]
+	    //   [sin(theta) cos(theta) ]
+	    // ]
+	
+	  }, {
+	    key: 'rotate',
+	    value: function rotate(angle, point) {
+	      if (angle == null) {
+	        throw new Error('No angle was passed to Vector2.rotate().');
+	      }
+	      var rad = angle * (Math.PI / 180);
+	      var cos = Math.cos(rad);
+	      var sin = Math.sin(rad);
+	
+	      if (point) {
+	        var dx = this.x - point.x;
+	        var dy = this.y - point.y;
+	        this.x = point.x + (dx * cos - dy * sin);
+	        this.y = point.y + (dx * sin + dy * cos);
+	      } else {
+	        var prevX = this.x;
+	        var prevY = this.y;
+	        this.x = prevX * cos - prevY * sin;
+	        this.y = prevX * sin + prevY * cos;
+	      }
+	      return this;
 	    }
 	  }]);
 	
@@ -873,6 +827,12 @@
 	// returns a new vector representing the sum
 	
 	
+	Vector2.Rotate = function (vector, angle, origin) {
+	  var ret = this.clone();
+	  return ret.rotate(angle, origin);
+	};
+	
+	// returns a new vector representing the sum
 	Vector2.Sum = function (left, right) {
 	  return new Vector2(left.x + right.x, left.y + right.y);
 	};
@@ -38165,7 +38125,7 @@
 	      gob.addRef(this);
 	
 	      // add all the keyboard events
-	      this._keyboard.addGobEventHandlers(gob._id, gob.events);
+	      // this._keyboard.addGobEventHandlers(gob._id, gob.events);
 	
 	      // TODO: This was commented out at some point, but i don't remember why.
 	      // make sure you check whyWHY??
@@ -38182,10 +38142,10 @@
 	
 	  }, {
 	    key: 'removeGob',
-	    value: function removeGob(gob) {
-	      // TODO: remove keyboard even handlers
-	      this._keyboard.removeGobEventHandlers(gob._id, gob.events);
-	    }
+	    value: function removeGob(gob) {}
+	    // TODO: remove keyboard even handlers
+	    // this._keyboard.removeGobEventHandlers(gob._id, gob.events);
+	
 	
 	    // TODO: EXPERIMENTAL: How do we handle allowing the definition of updates
 	    //                     from gobs themselves, as well as an overarching update?
@@ -38223,15 +38183,13 @@
 	      // TODO: should updates be passed any state?
 	      for (var i = 0; i < this.gobs.length; i++) {
 	        // all we need to do is check the AABB, i.e, the position,
-	        var prevX = this.gobs[i]._position.x;
-	        var prevY = this.gobs[i]._position.y;
+	        var prevX = this.gobs[i].position.x;
+	        var prevY = this.gobs[i].position.y;
 	        var prevWidth = this.gobs[i].width;
 	        var prevHeight = this.gobs[i].height;
 	
-	        this.gobs[i]._preUpdate();
 	        this.gobs[i]._update();
 	        this.gobs[i].update();
-	        this.gobs[i]._postUpdate();
 	
 	        if (this.gobs[i].position.x !== prevX || this.gobs[i].position.y !== prevY || this.gobs[i].width !== prevWidth || this.gobs[i].height !== prevHeight) {
 	          updated.push(this.gobs[i]);
@@ -38252,7 +38210,6 @@
 	      //
 	      // TODO: physics responses
 	      // TODO: need to update spatial hash post physics response
-	
 	      this.renderer.render(this.stage);
 	    }
 	
@@ -38434,7 +38391,7 @@
 	
 	function checkCollision(gob1, gob2) {
 	  // if both are immobile, use regular SAT, otherwise predictiveSAT
-	  var method = gob1._velocity.isZero() && gob2._velocity.isZero() ? SAT : predictiveSAT;
+	  var method = gob1.velocity.isZero() && gob2.velocity.isZero() ? SAT : predictiveSAT;
 	  // if neither are circle, use either SAT or predictiveSAT
 	
 	  // if one is a circle, one is a polygon, use special method
@@ -38607,7 +38564,7 @@
 	  var vertices2 = gob2.getVertices();
 	
 	  // velocity
-	  var velocity = _vector2.default.Difference(gob2._velocity, gob1._velocity);
+	  var velocity = _vector2.default.Difference(gob2.velocity, gob1.velocity);
 	
 	  // gather the normals
 	  var normals = gob1.getNormals().concat(gob2.getNormals());
@@ -38783,11 +38740,11 @@
 	
 	    // TODO: THIS IS A HACK. we set it to be at TFirst - 0.0001 so that there
 	    // isn't going to be an overlap
-	    gob1.position.y = gob1._position.y + gob1._velocity.y * (TFirst - 0.0001);
-	    gob1.position.x = gob1._position.x + gob1._velocity.x * (TFirst - 0.0001);
+	    gob1.position.y = gob1.position.y + gob1.velocity.y * (TFirst - 0.0001);
+	    gob1.position.x = gob1.position.x + gob1.velocity.x * (TFirst - 0.0001);
 	
-	    gob2.position.y = gob2._position.y + gob2._velocity.y * (TFirst - 0.0001);
-	    gob2.position.x = gob2._position.x + gob2._velocity.x * (TFirst - 0.0001);
+	    gob2.position.y = gob2.position.y + gob2.velocity.y * (TFirst - 0.0001);
+	    gob2.position.x = gob2.position.x + gob2.velocity.x * (TFirst - 0.0001);
 	
 	    adjustPhysicsVelocity(gob1, gob2, normal);
 	
