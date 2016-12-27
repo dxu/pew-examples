@@ -325,7 +325,7 @@
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 	
 	var Gob = function () {
-	  // also, the center of mass
+	  // external forces applied
 	  function Gob(game, opts) {
 	    var _this = this;
 	
@@ -340,6 +340,8 @@
 	    this.position = new _vector2.default(0, 0);
 	    this.angle = opts.angle || 0;
 	    this.angularVelocity = opts.angularVelocity || 0;
+	    this.torque = opts.torque != null ? opts.torque : 0;
+	    this.inertia = opts.inertia != null ? opts.inertia : 1;
 	
 	    if (opts.position) {
 	      this.position.x = opts.position.x;
@@ -373,6 +375,7 @@
 	
 	    this.velocity = opts.velocity || new _vector2.default(0, 0);
 	    this.acceleration = opts.acceleration || new _vector2.default(0, 0);
+	    this.force = opts.force || new _vector2.default(0, 0);
 	
 	    // generic optional data
 	    this.data = opts.data;
@@ -407,6 +410,11 @@
 	    }
 	  }
 	  // everything is derived from relativeVertices
+	  // moment of inertia
+	
+	  // TODO: maxAngularVelocity and maxVelocity
+	  // the gob's NATURAL acceleration.
+	  // also, the center of mass
 	
 	
 	  _createClass(Gob, [{
@@ -570,13 +578,18 @@
 	  }, {
 	    key: '_update',
 	    value: function _update() {
-	
 	      // this will get overridden later if the engine detects there is a collision
 	      this.position.x = this.position.x + this.velocity.x * _private.Time.dts;
 	      this.position.y = this.position.y + this.velocity.y * _private.Time.dts;
 	
-	      this.velocity.x = this.velocity.x + this.acceleration.x * _private.Time.dts;
-	      this.velocity.y = this.velocity.y + this.acceleration.y * _private.Time.dts;
+	      // total acceleration is equal to this.acceleration + force acceleration
+	      var totalXAcceleration = this.acceleration.x + this.force.x / this.mass;
+	      var totalYAcceleration = this.acceleration.y + this.force.y / this.mass;
+	
+	      this.velocity.x = this.velocity.x + totalXAcceleration * _private.Time.dts;
+	      this.velocity.y = this.velocity.y + totalYAcceleration * _private.Time.dts;
+	
+	      this.angularVelocity = this.angularVelocity + this.torque / this.inertia * Math.PI / 180;
 	
 	      this.angle += this.angularVelocity;
 	
@@ -657,6 +670,31 @@
 	      });
 	      this.calculateVertices();
 	      this.updateNormals();
+	    }
+	
+	    // add a max force at position
+	
+	  }, {
+	    key: 'addForceAtPosition',
+	    value: function addForceAtPosition(force, position) {
+	      this.force.add(force.x, force.y);
+	      this.torque += (position.x - this.position.x) * force.y - (position.y - this.position.y) * force.x;
+	    }
+	
+	    // add a force directly to the center of mass
+	
+	  }, {
+	    key: 'addForce',
+	    value: function addForce(force) {
+	      this.force.add(force.x, force.y);
+	    }
+	
+	    // add a torque directly
+	
+	  }, {
+	    key: 'addTorque',
+	    value: function addTorque(torque) {
+	      this.torque += torque;
 	    }
 	  }]);
 	
@@ -828,8 +866,7 @@
 	
 	
 	Vector2.Rotate = function (vector, angle, origin) {
-	  var ret = this.clone();
-	  return ret.rotate(angle, origin);
+	  return this.clone().rotate(angle, origin);
 	};
 	
 	// returns a new vector representing the sum

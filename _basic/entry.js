@@ -12,7 +12,6 @@ var renderer = new PIXI.WebGLRenderer(window.innerWidth, window.innerHeight, {
 
 // Declare a global variable for our sprite so that the animate function can access it.
 var zelda = null;
-
 renderer.backgroundColor = 0xFFFFFF;
 
 canvas.focus()
@@ -135,6 +134,39 @@ PIXI.loader.add('zelda', './assets/img/zelda.gif')
       friction: 0,
       width: 20,
       height: 20,
+      velocity: new Pew.V2(0, 0),
+      acceleration: new Pew.V2(0, 0),
+      debug: true,
+      data: {
+        sprite: new PIXI.Sprite(resources.heart.texture)
+      }
+    }, Pill)
+
+    game.createGob({
+      position: new Pew.V2(200, 200),
+      mass: 1,
+      bounce: 1,
+      friction: 0,
+      width: 20,
+      height: 20,
+      force: new Pew.V2(10, 10),
+      velocity: new Pew.V2(0, 0),
+      acceleration: new Pew.V2(0, 0),
+      debug: true,
+      data: {
+        sprite: new PIXI.Sprite(resources.heart.texture)
+      }
+    }, Pill)
+
+
+    game.createGob({
+      position: new Pew.V2(600, 600),
+      mass: 1,
+      bounce: 1,
+      friction: 0,
+      width: 20,
+      height: 20,
+      torque: 1,
       velocity: new Pew.V2(0, 0),
       acceleration: new Pew.V2(0, 0),
       debug: true,
