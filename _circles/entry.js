@@ -22,7 +22,6 @@ var stage = new PIXI.Container()
 
 let game
 
-window.spatialHash = new Pew.SpatialHash(TILESIZE)
 // let hearts = []
 // let a
 
