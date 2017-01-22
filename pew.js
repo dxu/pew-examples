@@ -86,10 +86,6 @@
 	
 	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 	
-	var _util = __webpack_require__(2);
-	
-	var _util2 = _interopRequireDefault(_util);
-	
 	var _vector = __webpack_require__(3);
 	
 	var _vector2 = _interopRequireDefault(_vector);
@@ -100,6 +96,12 @@
 	
 	var _private = __webpack_require__(182);
 	
+	var _matterJs = __webpack_require__(197);
+	
+	var _matterJs2 = _interopRequireDefault(_matterJs);
+	
+	var _util = __webpack_require__(2);
+	
 	function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
@@ -109,99 +111,89 @@
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 	
 	var Gob = function () {
-	  // external forces applied
-	  function Gob(game, opts) {
-	    var _this = this;
 	
+	  // Rendering data
+	  // Non rigid bodies only!!
+	
+	  // TODO: should we even allow this
+	  // also, the center of mass
+	  // can be derived from width + height
+	  function Gob(game, opts) {
 	    _classCallCheck(this, Gob);
 	
-	    this._id = _util2.default.uuid();
-	    this._destroyed = false;
-	    this.mass = opts.mass != null ? opts.mass : 1;
-	    this.friction = opts.friction != null ? opts.friction : 1;
-	    this.bounce = opts.bounce != null ? opts.bounce : 1;
-	    this._normals = [];
-	    this.position = new _vector2.default(0, 0);
+	    if (opts.position == null) {
+	      throw new Error('Invalid game object. No position provided.');
+	    }
+	    if (opts.width && opts.height) {
+	      this.width = opts.width;
+	      this.height = opts.height;
+	      this.relativeVertices = _util.GobUtils.calculateRelativeVertices(this.width, this.height);
+	    } else if (opts.relativeVertices != null) {
+	      this.relativeVertices = opts.relativeVertices;
+	
+	      var _GobUtils$calculateWi = _util.GobUtils.calculateWidthAndHeight(this.relativeVertices),
+	          _width = _GobUtils$calculateWi.width,
+	          _height = _GobUtils$calculateWi.height;
+	
+	      this.width = _width;
+	      this.height = _height;
+	    } else {
+	      throw new Error('Invalid gob. You must provide at least relativeVertices\n        or width + height');
+	    }
+	
+	    this._id = _util.Utils.uuid();
+	
 	    this.angle = opts.angle || 0;
 	    this.angularVelocity = opts.angularVelocity || 0;
-	    this.torque = opts.torque != null ? opts.torque : 0;
-	    this.inertia = opts.inertia != null ? opts.inertia : 1;
+	    this.angularAcceleration = opts.angularAcceleration || 0;
 	
-	    if (opts.position) {
-	      this.position.x = opts.position.x;
-	      this.position.y = opts.position.y;
-	      // 2D AABB consists of a this.position, and a this.width and this.height
-	      if (opts.width && opts.height) {
-	        this.width = opts.width;
-	        this.height = opts.height;
-	        this.relativeVertices = [new _vector2.default(-this.width / 2, -this.height / 2), new _vector2.default(this.width / 2, -this.height / 2), new _vector2.default(this.width / 2, this.height / 2), new _vector2.default(-this.width / 2, this.height / 2)];
-	      } else if (opts.relativeVertices) {
-	        this.relativeVertices = opts.relativeVertices;
-	      } else {
-	        // A circle consists of a this.position, and a this.radius
-	        // TODO: not yet implemented! Implementing circle collision detection
-	        //       requires voronoi regions or some other way to convert the
-	        //       geometry into polygons
-	        throw new Error('Invalid game object. A position was given, but neither\n                         a radius nor [width && height] were given');
-	      }
-	    } else {
-	      throw new Error('Invalid game object. No vertices or position provided.');
-	    }
-	    // set up the initial angle
-	    this.relativeVertices.map(function (vertex) {
-	      return vertex.rotate(_this.angle);
-	    });
-	    this.calculateVertices();
-	    this.updateNormals();
-	
-	    // defaults to no movement
-	    this.maxVelocity = opts.maxVelocity || new _vector2.default(0, 0);
-	
-	    this.velocity = opts.velocity || new _vector2.default(0, 0);
-	    this.acceleration = opts.acceleration || new _vector2.default(0, 0);
-	    this.force = opts.force || new _vector2.default(0, 0);
-	
-	    // generic optional data
-	    this.data = opts.data;
-	
-	    // initialize a refs array. This will contain any other object that will
-	    // contain references
-	    // to this object
+	    // default to no debug
+	    this.debug = opts.debug || false;
 	    this.refs = _defineProperty({}, game._id, game);
 	    this.game = game;
 	
-	    // TODO: completely separate sprite and image into a different class
+	    this.position = new _vector2.default(opts.position.x, opts.position.y);
+	    // defaults to no movement
+	    this.velocity = opts.velocity || new _vector2.default(0, 0);
+	    this.maxVelocity = opts.maxVelocity || new _vector2.default(0, 0);
+	    this.acceleration = opts.acceleration || new _vector2.default(0, 0);
+	    this.data = opts.data;
 	
-	    // default to 0.5, 0.5
-	    // TODO: allow this to be customized
+	    this.updateDerived();
+	
 	    this.data.sprite.anchor.set(0.5, 0.5);
-	
 	    // TODO: allow separately setting the sprite width/height
 	    this.data.sprite.scale.set(this.width / this.data.sprite.width, this.height / this.data.sprite.height);
 	
 	    this.updateSprite();
-	
-	    // TODO: add handler for checking if a key is being pressed. SHOULD THIS BE
-	    //       HANDLED BY THE GAME?
-	    // answer: yes.
-	
-	    // default false
-	    this.debug = opts.debug || false;
 	
 	    if (this.debug) {
 	      this._setupDebug(game);
 	      this._debug();
 	    }
 	  }
-	  // everything is derived from relativeVertices
-	  // moment of inertia
 	
-	  // TODO: maxAngularVelocity and maxVelocity
-	  // the gob's NATURAL acceleration.
-	  // also, the center of mass
+	  // This is the method that is called invisibly to set up the rigidbody +
+	  // collider stuff
+	  // Non rigid bodies only!! the gob's INITIAL acceleration.
+	  // everything is derived from relativeVertices
 	
 	
 	  _createClass(Gob, [{
+	    key: '__init',
+	    value: function __init() {
+	      // if it has a collider defined, then we should create a Collider object -
+	      // and a body of that type of collider.
+	      if (this.collider) {
+	        this._body = this.collider.getMatterBody();
+	        // if it has no rigidbody property, then this should be considered a trigger
+	        if (!this.rigidBody) {
+	          console.log();
+	          this._body.isSensor = true;
+	        }
+	      }
+	    }
+	  }, {
 	    key: 'getVertices',
 	    value: function getVertices() {
 	      return this.vertices;
@@ -215,136 +207,12 @@
 	      return this._normals;
 	    }
 	
-	    // should be implemented
-	
-	  }, {
-	    key: 'onCollide',
-	    value: function onCollide(obj) {}
-	
 	    // add it as a ref
 	
 	  }, {
-	    key: 'addRef',
-	    value: function addRef(ref) {
+	    key: '_addRef',
+	    value: function _addRef(ref) {
 	      this.refs[ref._id] = ref;
-	    }
-	
-	    // remove all references. Enforce asynchronicity so that it will finish one
-	    // update before executing
-	
-	  }, {
-	    key: 'destroy',
-	    value: function destroy() {
-	      var _this2 = this;
-	
-	      // We still need to set state for whether or not this object is destroyed
-	      // already
-	      // Imagine one huge object that gets hit by two other objects. It will try
-	      // to destroy itself twice no matter how you structure the contact cache
-	      if (this._destroyed) {
-	        return;
-	      }
-	
-	      // TODO: for some reason this still gets called a bunch of times?
-	      // Problem: can't actually just let it run because if i call destroy() in
-	      // onCollide, the objects gets destroyed before the other objects get to use
-	      // it in their onCollide
-	      window.requestAnimationFrame(function () {
-	        for (var index in _this2.refs) {
-	          _this2.refs[index].removeGob(_this2);
-	          delete _this2.refs[index];
-	        }
-	
-	        // remove PIXI sprite from its parent
-	        _this2.data.sprite.parent.removeChild(_this2.data.sprite);
-	
-	        // TODO: I don't think I actually need to do any of the following
-	        delete _this2._id;
-	        delete _this2.data;
-	        delete _this2.vertices;
-	        delete _this2.refs;
-	        delete _this2.position;
-	      });
-	      this._destroyed = true;
-	    }
-	
-	    // recalculate the vertices and normals based on relativeVertices or
-	    // width/height
-	
-	  }, {
-	    key: 'calculateVertices',
-	    value: function calculateVertices() {
-	      var _this3 = this;
-	
-	      // if there is a width and height, and isn't rotating/rotated then use AABB
-	      if (this.width && this.height && this.angularVelocity === 0 && this.angle === 0) {
-	        this.vertices = this._aabb = this.calculateAABB();
-	        return;
-	      }
-	      // otherwise, update absolute vertices, and
-	      this.vertices = this.relativeVertices.map(function (vertex) {
-	        return _vector2.default.Sum(vertex, _this3.position);
-	      });
-	      this._aabb = this.calculateAABBFromVertices();
-	    }
-	
-	    // update the vertices relative to center. Will update AABB together with the
-	    // vertices
-	
-	  }, {
-	    key: 'calculateAABB',
-	    value: function calculateAABB() {
-	      // the AABB. Goes from TL, clockwise
-	      var aabb = [new _vector2.default(0, 0), // TL
-	      new _vector2.default(0, 0), // TR
-	      new _vector2.default(0, 0), // BR
-	      new _vector2.default(0, 0)];
-	
-	      // TL, BL
-	      aabb[0].x = aabb[3].x = this.position.x - this.width / 2;
-	      // TR, BR
-	      aabb[1].x = aabb[2].x = this.position.x + this.width / 2;
-	
-	      // TL, BL
-	      aabb[0].y = aabb[1].y = this.position.y - this.height / 2;
-	      // TR, BR
-	      aabb[2].y = aabb[3].y = this.position.y + this.height / 2;
-	
-	      return aabb;
-	    }
-	  }, {
-	    key: 'calculateAABBFromVertices',
-	    value: function calculateAABBFromVertices() {
-	      var minX = 0;
-	      var minY = 0;
-	      var maxX = 0;
-	      var maxY = 0;
-	      // go through vertices
-	      this.vertices.map(function (vertex) {
-	        minX = Math.min(minX, vertex.x);
-	        minY = Math.min(minX, vertex.y);
-	        maxX = Math.max(minX, vertex.x);
-	        maxY = Math.max(minX, vertex.y);
-	      });
-	      // the AABB. Goes from TL, clockwise
-	      var aabb = [new _vector2.default(minY, minX), // TL
-	      new _vector2.default(minY, maxX), // TR
-	      new _vector2.default(maxY, minX), // BR
-	      new _vector2.default(maxY, maxX)];
-	      return aabb;
-	    }
-	  }, {
-	    key: 'updateNormals',
-	    value: function updateNormals() {
-	      var _this4 = this;
-	
-	      this._edges = this.vertices.map(function (vertex, index) {
-	        return _vector2.default.Difference(_this4.vertices[(index + 1) % _this4.vertices.length], vertex);
-	      });
-	
-	      this._normals = this._edges.map(function (vertex) {
-	        return vertex.orthol();
-	      });
 	    }
 	  }, {
 	    key: '_setupDebug',
@@ -354,7 +222,8 @@
 	      // Note: the outline will be added to the stage by the game object!
 	    }
 	
-	    // this is the update that will get called privately
+	    // this is the update that will get called privately,
+	    // ONLY IF it's not a rigid body!!
 	    // https://www.niksula.hut.fi/~hkankaan/Homepages/gravity.html
 	    // http://codeflow.org/entries/2010/aug/28/integration-by-example-euler-vs-verlet-vs-runge-kutta/
 	    // http://gafferongames.com/game-physics/integration-basics/
@@ -366,19 +235,24 @@
 	      this.position.x = this.position.x + this.velocity.x * _private.Time.dts;
 	      this.position.y = this.position.y + this.velocity.y * _private.Time.dts;
 	
-	      // total acceleration is equal to this.acceleration + force acceleration
-	      var totalXAcceleration = this.acceleration.x + this.force.x / this.mass;
-	      var totalYAcceleration = this.acceleration.y + this.force.y / this.mass;
+	      this.velocity.x = this.velocity.x + this.acceleration.x * _private.Time.dts;
+	      this.velocity.y = this.velocity.y + this.acceleration.y * _private.Time.dts;
 	
-	      this.velocity.x = this.velocity.x + totalXAcceleration * _private.Time.dts;
-	      this.velocity.y = this.velocity.y + totalYAcceleration * _private.Time.dts;
-	
-	      this.angularVelocity = this.angularVelocity + this.torque / this.inertia * Math.PI / 180;
+	      this.angularVelocity = this.angularVelocity + this.angularAcceleration;
 	
 	      this.angle += this.angularVelocity;
 	
 	      // same with derived values
 	      this.updateDerived();
+	    }
+	
+	    // TODO: reuse the vectors (add the differences when it moves instead of
+	    // reinstantiating every vector)
+	
+	  }, {
+	    key: 'updateDerived',
+	    value: function updateDerived() {
+	      _util.GobUtils.updateDerived(this);
 	    }
 	
 	    // TODO: is there any way to enforce that methods are run?
@@ -399,6 +273,15 @@
 	      if (this.debug) {
 	        this._debug();
 	      }
+	    }
+	
+	    // updates the sprite's position. Should be called after committing position
+	
+	  }, {
+	    key: 'updateSprite',
+	    value: function updateSprite() {
+	      this.data.sprite.position.set(this.position.x, this.position.y);
+	      this.data.sprite.rotation = this.angle * (Math.PI / 180);
 	    }
 	  }, {
 	    key: '_debug',
@@ -421,64 +304,49 @@
 	      this._debugData.outline.drawPolygon(path);
 	    }
 	
-	    // THIS SHOULD BE USED ONLY IF YOU DO NOT WANT TO RELY ON THE AUTOMATIC
-	    // VELOCITY AND ACCELERATION CALCULATION DONE BY THE ENGINE! Only use this
-	    // if you are building custom code.
+	    // should be overridden
 	
 	  }, {
-	    key: 'updatePosition',
-	    value: function updatePosition(xDiff, yDiff) {
-	      this.position.x += xDiff;
-	      this.position.y += yDiff;
-	    }
+	    key: 'onCollide',
+	    value: function onCollide(obj) {}
 	
-	    // updates the sprite's position. Should be called after committing position
+	    // remove all references. Enforce asynchronicity so that it will finish one
+	    // update before executing
 	
 	  }, {
-	    key: 'updateSprite',
-	    value: function updateSprite() {
-	      this.data.sprite.position.set(this.position.x, this.position.y);
-	      this.data.sprite.rotation = this.angle * (Math.PI / 180);
-	    }
+	    key: 'destroy',
+	    value: function destroy() {
+	      var _this = this;
 	
-	    // TODO: reuse the vectors (add the differences when it moves instead of
-	    // reinstantiating every vector)
+	      // We still need to set state for whether or not this object is destroyed
+	      // already
+	      // Imagine one huge object that gets hit by two other objects. It will try
+	      // to destroy itself twice no matter how you structure the contact cache
+	      if (this._destroyed) {
+	        return;
+	      }
 	
-	  }, {
-	    key: 'updateDerived',
-	    value: function updateDerived() {
-	      var _this5 = this;
+	      // TODO: for some reason this still gets called a bunch of times?
+	      // Problem: can't actually just let it run because if i call destroy() in
+	      // onCollide, the objects gets destroyed before the other objects get to use
+	      // it in their onCollide
+	      window.requestAnimationFrame(function () {
+	        for (var index in _this.refs) {
+	          _this.refs[index].removeGob(_this);
+	          delete _this.refs[index];
+	        }
 	
-	      this.relativeVertices.map(function (vertex) {
-	        return vertex.rotate(_this5.angularVelocity);
+	        // remove PIXI sprite from its parent
+	        _this.data.sprite.parent.removeChild(_this.data.sprite);
+	
+	        // TODO: I don't think I actually need to do any of the following
+	        delete _this._id;
+	        delete _this.data;
+	        delete _this.vertices;
+	        delete _this.refs;
+	        delete _this.position;
 	      });
-	      this.calculateVertices();
-	      this.updateNormals();
-	    }
-	
-	    // add a max force at position
-	
-	  }, {
-	    key: 'addForceAtPosition',
-	    value: function addForceAtPosition(force, position) {
-	      this.force.add(force.x, force.y);
-	      this.torque += (position.x - this.position.x) * force.y - (position.y - this.position.y) * force.x;
-	    }
-	
-	    // add a force directly to the center of mass
-	
-	  }, {
-	    key: 'addForce',
-	    value: function addForce(force) {
-	      this.force.add(force.x, force.y);
-	    }
-	
-	    // add a torque directly
-	
-	  }, {
-	    key: 'addTorque',
-	    value: function addTorque(torque) {
-	      this.torque += torque;
+	      this._destroyed = true;
 	    }
 	  }]);
 	
@@ -489,26 +357,125 @@
 
 /***/ },
 /* 2 */
-/***/ function(module, exports) {
+/***/ function(module, exports, __webpack_require__) {
 
-	"use strict";
+	'use strict';
 	
 	Object.defineProperty(exports, "__esModule", {
 	  value: true
 	});
+	exports.GobUtils = exports.Utils = undefined;
+	
+	var _vector = __webpack_require__(3);
+	
+	var _vector2 = _interopRequireDefault(_vector);
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+	
 	var count = 0;
 	
 	// TODO: create a type out of the id
-	function uuid() {
-	  return count++;
-	  // return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-	  //     var r = Math.random()*16|0, v = c == 'x' ? r : (r&0x3|0x8);
-	  //     return v.toString(16);
-	  // });
-	}
 	
-	exports.default = {
-	  uuid: uuid
+	
+	var Utils = exports.Utils = {
+	  uuid: function uuid() {
+	    return count++;
+	    // return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+	    //     var r = Math.random()*16|0, v = c == 'x' ? r : (r&0x3|0x8);
+	    //     return v.toString(16);
+	    // });
+	  }
+	};
+	
+	var GobUtils = exports.GobUtils = {
+	  calculateRelativeVertices: function calculateRelativeVertices(width, height) {
+	    // 2D AABB consists of a position, and a width and height
+	    return [new _vector2.default(-width / 2, -height / 2), new _vector2.default(width / 2, -height / 2), new _vector2.default(width / 2, height / 2), new _vector2.default(-width / 2, height / 2)];
+	  },
+	  calculateWidthAndHeight: function calculateWidthAndHeight(relativeVertices) {
+	    // 2D AABB consists of a position, and a width and height
+	    var minX = -Infinity;
+	    var maxX = Infinity;
+	    var minY = -Infinity;
+	    var maxY = Infinity;
+	    relativeVertices.map(function (vertex) {
+	      minX = Math.min(vertex.x, minX);
+	      maxX = Math.min(vertex.x, maxX);
+	      minY = Math.min(vertex.y, minY);
+	      maxY = Math.min(vertex.y, maxY);
+	    });
+	    return {
+	      width: maxX - minX,
+	      height: maxY - minY
+	    };
+	  },
+	  updateDerived: function updateDerived(gob) {
+	    gob.relativeVertices.map(function (vertex) {
+	      return vertex.rotate(gob.angle);
+	    });
+	
+	    // if there is a width and height, and isn't rotating/rotated then use AABB
+	    if (gob.width && gob.height && gob.angularVelocity === 0 && gob.angle === 0) {
+	      gob.vertices = gob._aabb = GobUtils.calculateAABB(gob.position, gob.width, gob.height);
+	      return;
+	    }
+	    // otherwise, update absolute vertices, and
+	    gob.vertices = gob.relativeVertices.map(function (vertex) {
+	      return _vector2.default.Sum(vertex, gob.position);
+	    });
+	    gob._aabb = GobUtils.calculateAABBFromVertices(gob.vertices);
+	
+	    // update the normals
+	    gob._edges = gob.vertices.map(function (vertex, index) {
+	      return _vector2.default.Difference(gob.vertices[(index + 1) % gob.vertices.length], vertex);
+	    });
+	
+	    gob._normals = gob._edges.map(function (vertex) {
+	      return vertex.orthol();
+	    });
+	  },
+	
+	
+	  // update the vertices relative to center. Will update AABB together with the
+	  // vertices
+	  calculateAABB: function calculateAABB(position, width, height) {
+	    // the AABB. Goes from TL, clockwise
+	    var aabb = [new _vector2.default(0, 0), // TL
+	    new _vector2.default(0, 0), // TR
+	    new _vector2.default(0, 0), // BR
+	    new _vector2.default(0, 0)];
+	
+	    // TL, BL
+	    aabb[0].x = aabb[3].x = position.x - width / 2;
+	    // TR, BR
+	    aabb[1].x = aabb[2].x = position.x + width / 2;
+	
+	    // TL, BL
+	    aabb[0].y = aabb[1].y = position.y - height / 2;
+	    // TR, BR
+	    aabb[2].y = aabb[3].y = position.y + height / 2;
+	
+	    return aabb;
+	  },
+	  calculateAABBFromVertices: function calculateAABBFromVertices(vertices) {
+	    var minX = 0;
+	    var minY = 0;
+	    var maxX = 0;
+	    var maxY = 0;
+	    // go through vertices
+	    vertices.map(function (vertex) {
+	      minX = Math.min(minX, vertex.x);
+	      minY = Math.min(minX, vertex.y);
+	      maxX = Math.max(minX, vertex.x);
+	      maxY = Math.max(minX, vertex.y);
+	    });
+	    // the AABB. Goes from TL, clockwise
+	    var aabb = [new _vector2.default(minY, minX), // TL
+	    new _vector2.default(minY, maxX), // TR
+	    new _vector2.default(maxY, minX), // BR
+	    new _vector2.default(maxY, maxX)];
+	    return aabb;
+	  }
 	};
 
 /***/ },
@@ -37845,62 +37812,36 @@
 	
 	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 	
-	var _engine = __webpack_require__(185);
+	var _pixi = __webpack_require__(4);
 	
-	var _engine2 = _interopRequireDefault(_engine);
+	var Pixi = _interopRequireWildcard(_pixi);
 	
 	var _gob = __webpack_require__(1);
 	
 	var _gob2 = _interopRequireDefault(_gob);
 	
-	var _util = __webpack_require__(2);
-	
-	var _util2 = _interopRequireDefault(_util);
-	
-	var _keyboard = __webpack_require__(193);
-	
-	var _keyboard2 = _interopRequireDefault(_keyboard);
-	
-	var _pixi = __webpack_require__(4);
-	
-	var Pixi = _interopRequireWildcard(_pixi);
-	
 	var _matterJs = __webpack_require__(197);
 	
 	var _matterJs2 = _interopRequireDefault(_matterJs);
 	
-	function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
+	var _private = __webpack_require__(182);
+	
+	var _util = __webpack_require__(2);
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 	
+	function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
+	
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 	
-	// TODO: Multiple game states might be necessary. For example, in Phaser, you
-	//       can define Victory, Play, Intro, states, etc.
-	// TODO: handle sprite and asset preloading
 	var Pool = function () {
-	
-	  // contains a spatial hash, gobs, renderer
-	
-	  // TODO: allow other renderers
 	  function Pool(renderer, opts) {
 	    _classCallCheck(this, Pool);
 	
-	    // required so it can be removed as a ref
-	    this._id = _util2.default.uuid();
+	    this._id = _util.Utils.uuid();
 	    this.renderer = renderer;
-	
-	    this.lastTime = Date.now();
-	    this.fps = 0;
-	    // TODO: move off Pixi
-	    this.fpsText = new Pixi.Text(Math.floor(this.fps), { fontFamily: 'Arial', fontSize: 12, fill: 0xff1010, align: 'center' });
-	    this.fpsText.position.set(0, 0);
-	
-	    // construct a spatial hash
 	    // TODO: tilesize hardcoded
 	    this.tileSize = 30;
-	
-	    this.ceng = new _engine2.default(this.tileSize);
 	
 	    // array of gob objects
 	    this.gobs = [];
@@ -37908,61 +37849,38 @@
 	    this.stage = opts.stage;
 	
 	    this.engine = _matterJs2.default.Engine.create();
-	
-	    // draws a grid of given tilesize
-	    this.grid = new Pixi.Graphics();
-	    this.grid.moveTo(0, 0);
-	    this.grid.lineStyle(1, 0x336699, 0.3);
-	
-	    for (var i = 0; i <= renderer.view.width; i += this.tileSize) {
-	      this.grid.moveTo(i, 0);
-	      this.grid.lineTo(i, renderer.view.height);
-	    }
-	    for (var _i = 0; _i < renderer.view.height; _i += this.tileSize) {
-	      this.grid.moveTo(0, _i);
-	      this.grid.lineTo(renderer.view.width, _i);
-	    }
-	
-	    if (!opts.showGrid) {
-	      this.grid.visible = false;
-	    }
-	
-	    this.stage.addChild(this.grid);
-	    this.stage.addChild(this.fpsText);
-	
-	    this._keyboard = new _keyboard2.default({
-	      canvas: this.renderer.view
-	    });
-	    window.keyboard = this._keyboard;
-	
-	    // this.hideGrid()
+	    this._drawFPS();
+	    this._drawGrid(opts.showGrid);
 	  }
 	
 	  _createClass(Pool, [{
-	    key: 'getWidth',
-	    value: function getWidth() {
-	      return this.renderer.view.width;
+	    key: '_drawFPS',
+	    value: function _drawFPS() {
+	      this.fps = 0;
+	      // TODO: move off Pixi
+	      this.fpsText = new Pixi.Text(Math.floor(this.fps), { fontFamily: 'Arial', fontSize: 12, fill: 0xff1010, align: 'center' });
+	      this.fpsText.position.set(0, 0);
+	      this.stage.addChild(this.fpsText);
 	    }
 	  }, {
-	    key: 'getHeight',
-	    value: function getHeight() {
-	      return this.renderer.view.height;
-	    }
-	
-	    // delegates to this._keyboard
-	
-	  }, {
-	    key: 'registerEventHandler',
-	    value: function registerEventHandler() {}
-	    // this._keyboard.registerEventHandler(...args)
-	
-	
-	    // delegates to this._keyboard
-	
-	  }, {
-	    key: 'isKeyPressed',
-	    value: function isKeyPressed(keyCode) {
-	      return this._keyboard.isKeyPressed(keyCode);
+	    key: '_drawGrid',
+	    value: function _drawGrid(showGrid) {
+	      // draws a grid of given tilesize
+	      this.grid = new Pixi.Graphics();
+	      this.grid.moveTo(0, 0);
+	      this.grid.lineStyle(1, 0x336699, 0.3);
+	      for (var i = 0; i <= this.renderer.view.width; i += this.tileSize) {
+	        this.grid.moveTo(i, 0);
+	        this.grid.lineTo(i, this.renderer.view.height);
+	      }
+	      for (var _i = 0; _i < this.renderer.view.height; _i += this.tileSize) {
+	        this.grid.moveTo(0, _i);
+	        this.grid.lineTo(this.renderer.view.width, _i);
+	      }
+	      if (!showGrid) {
+	        this.grid.visible = false;
+	      }
+	      this.stage.addChild(this.grid);
 	    }
 	  }, {
 	    key: 'showGrid',
@@ -37988,23 +37906,11 @@
 	      var GobClass = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : _gob2.default;
 	
 	      var gob = new GobClass(this, opts);
-	      this.stage.addChild(gob.data.sprite);
-	      if (gob.debug) {
-	        this.stage.addChild(gob._debugData.outline);
-	      }
-	      this.gobs.push(gob);
-	      gob.addRef(this);
-	
-	      // add all the keyboard events
-	      // this._keyboard.addGobEventHandlers(gob._id, gob.events);
-	
-	      // TODO: This was commented out at some point, but i don't remember why.
-	      // make sure you check whyWHY??
-	      this.ceng.update(this.gobs, [gob]);
-	
-	      // TODO: Refactor this + below
-	      for (var i = 0; i < this.gobs.length; i++) {
-	        this.gobs[i]._postCollisionUpdate();
+	      gob.__init();
+	      // if it contains a collider, we need to put it into the collision engine,
+	      // regardless whether or not it is a rigid body
+	      if (gob._body != null) {
+	        _matterJs2.default.World.add(this.engine.world, gob._body);
 	      }
 	    }
 	
@@ -38040,42 +37946,15 @@
 	
 	      this.update();
 	
-	      var updated = [];
-	
-	      // TODO: See issue #14. Currently this model of
-	      //          1. calculate new positions
-	      //          2. figure out which ones CHANGED
-	      //          3. pass all the ones that changed into the collision engine
-	      //          4. resolve collisions
-	      //       works well with a reactive model, but with a predictive model,
-	      //       this becomes unwieldy. Currently, we have the _previousPosition
-	      //       which we might be able to use with a preditive model.
-	
-	      // TODO: should updates be passed any state?
-	      for (var i = 0; i < this.gobs.length; i++) {
-	        // all we need to do is check the AABB, i.e, the position,
-	        var prevX = this.gobs[i].position.x;
-	        var prevY = this.gobs[i].position.y;
-	        var prevWidth = this.gobs[i].width;
-	        var prevHeight = this.gobs[i].height;
-	
-	        this.gobs[i]._update();
-	        this.gobs[i].update();
-	
-	        if (this.gobs[i].position.x !== prevX || this.gobs[i].position.y !== prevY || this.gobs[i].width !== prevWidth || this.gobs[i].height !== prevHeight) {
-	          updated.push(this.gobs[i]);
-	        }
-	      }
-	
 	      // because the spatial hash is now being regenerated on each update, we just
 	      // pass all the gobs to the ceng
 	
 	      // TODO: add ONLY THE ONES THAT CHANGED back to the spatial hash
-	      this.ceng.update(this.gobs, updated);
+	      _matterJs2.default.Engine.update(this.engine, _private.Time.dtms);
 	
 	      // TODO: Refactor this + above
-	      for (var _i2 = 0; _i2 < this.gobs.length; _i2++) {
-	        this.gobs[_i2]._postCollisionUpdate();
+	      for (var i = 0; i < this.gobs.length; i++) {
+	        this.gobs[i]._postCollisionUpdate();
 	      }
 	
 	      //
@@ -38102,764 +37981,18 @@
 	exports.default = Pool;
 
 /***/ },
-/* 185 */
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
-	
-	Object.defineProperty(exports, "__esModule", {
-	  value: true
-	});
-	
-	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-	
-	var _spatial = __webpack_require__(195);
-	
-	var _spatial2 = _interopRequireDefault(_spatial);
-	
-	var _detector = __webpack_require__(196);
-	
-	var _detector2 = _interopRequireDefault(_detector);
-	
-	var _contactcache = __webpack_require__(187);
-	
-	var _contactcache2 = _interopRequireDefault(_contactcache);
-	
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-	
-	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-	
-	// import checkCollision from './collision';
-	
-	// TODO: contact cache should just store all checks to prevent duplicates, not
-	//       just the ones that collided
-	var CollisionEngine = function () {
-	  function CollisionEngine(tileSize) {
-	    _classCallCheck(this, CollisionEngine);
-	
-	    this.tileSize = tileSize;
-	    // initialize a spatialhash
-	    this.broadphase = new _spatial2.default(this.tileSize);
-	    // TODO: this shouldn't have to be a class. Should be able to just be a
-	    // method. Both broad phase and narrow phase should be able to use class vs
-	    // function?
-	    // TODO: What if this was done in a precompile step? You build an engine
-	    // using configuration...
-	    this.narrowphase = new _detector2.default();
-	    // this will just be a pairing of all collisions per update.
-	    // It should be cleared with each update!!
-	    // TODO: make contactcache shareable!!!
-	    this.contactCache = new _contactcache2.default();
-	  }
-	
-	  // takes in a map of gobs
-	
-	
-	  _createClass(CollisionEngine, [{
-	    key: 'update',
-	    value: function update(gobs) {
-	      var changedGobs = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : gobs;
-	
-	      // maintain an array of pairs
-	      var pairs = [];
-	
-	      // seed the broadphase
-	
-	      // for each changed gob,
-	
-	      // - go through the broadphase. broadphase should return a set of potential
-	      // collisions
-	      // add all gobs gnto the spatial hash
-	      this.broadphase.seed(gobs);
-	      this.contactCache.seed(gobs);
-	
-	      var broad = this.broadphase.detectPotentialCollisions(changedGobs);
-	
-	      // - pass the pairs into the narrow phase, get back an array of pairs
-	
-	      var narrow = this.narrowphase.checkPotentialCollisions(broad);
-	
-	      // pass array of pairs into resolver. Resolver will go through and solve all
-	      // physics constraints
-	      // TODO;
-	
-	      // free contactCache
-	      this.contactCache.free();
-	      this.broadphase.empty();
-	    }
-	  }]);
-	
-	  return CollisionEngine;
-	}();
-	
-	exports.default = CollisionEngine;
-
-/***/ },
-/* 186 */
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
-	
-	Object.defineProperty(exports, "__esModule", {
-	  value: true
-	});
-	
-	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-	
-	var _util = __webpack_require__(2);
-	
-	var _util2 = _interopRequireDefault(_util);
-	
-	var _private = __webpack_require__(182);
-	
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-	
-	function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
-	
-	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-	
-	/*
-	 * A generic spatial hash used for comparing
-	 * @param comparator
-	 * @param collision - collision function for
-	 * @param bucketHash - hash function for determining buckets
-	 *
-	 * Usage:
-	 * Can only take in objects with a built in onCollide(object) method. The
-	 *     object must also contain an `_id` parameter to access a unique id
-	 *
-	 *
-	 * Pass in a bucket hash function that will determine the bucket index in which
-	 *      the object is located
-	 * Pass in the uuid hash function referencing the item
-	 * Pass in the Collision function for determining the collision of two polygons
-	 *      or game objects (AABB, Separating Axis, etc)
-	 *
-	 * compare(item) will return true if there exists a collision
-	 *
-	 *
-	 *
-	 * TODO:
-	 * - allow for a set of buckets with which you do not detect collision
-	 * - enforce that buckethash and _id exist on the object
-	 *
-	 * http://gamedev.stackexchange.com/questions/26501/how-does-a-collision-engine-work
-	 *
-	 */
-	var SpatialHash = function () {
-	  // Takes in a 2d map tile size for calculating the bucket.
-	  function SpatialHash() {
-	    var tileSize = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 10;
-	    var bucketHash = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : defaultBucketHash;
-	
-	    _classCallCheck(this, SpatialHash);
-	
-	    // this must also have a uuid
-	    this._id = _util2.default.uuid();
-	
-	    this.buckets = {
-	      // {
-	      //   bucket_id: [gob (actual gob objects)]
-	      // }
-	      //
-	    };
-	
-	    this.tileSize = tileSize;
-	    this.bucketHash = bucketHash || defaultBucketHash;
-	  }
-	
-	  // TODO: Optimize
-	  // returns possible gobs that might collide with given gob
-	
-	
-	  _createClass(SpatialHash, [{
-	    key: 'getPossibleGobs',
-	    value: function getPossibleGobs(gob) {
-	      var memo = _defineProperty({}, gob._id, true);
-	      var accum = [];
-	
-	      // for each bucket
-	      this._getBuckets(gob).map(function (bucket) {
-	        // for each gob in bucket, if not in memo, push to accum
-	        bucket.map(function (gob) {
-	          if (!memo[gob._id]) {
-	            memo[gob._id] = true;
-	            accum.push(gob);
-	          }
-	        });
-	      });
-	
-	      // returns a list of unique gobs that potentially collide
-	      return accum;
-	    }
-	
-	    // because the spatialhash should get cleared every udpate, we no longer need
-	    // to keep track of and remove gobs
-	
-	  }, {
-	    key: 'add',
-	    value: function add(gob) {
-	      // get buckets for the current position
-	      var buckets = this._getBuckets(gob);
-	
-	      for (var i = 0; i < buckets.length; i++) {
-	        this.addToOneBucket(gob, buckets[i]);
-	      }
-	    }
-	  }, {
-	    key: 'seed',
-	    value: function seed(gobs) {
-	      for (var i = 0; i < gobs.length; i++) {
-	        this.add(gobs[i]);
-	      }
-	    }
-	  }, {
-	    key: 'addToOneBucket',
-	    value: function addToOneBucket(gob, bucket) {
-	      // add gob to bucket
-	      bucket.push(gob);
-	    }
-	
-	    // removes all gobs from this spatial hash
-	
-	  }, {
-	    key: 'empty',
-	    value: function empty() {
-	      this.buckets = {};
-	    }
-	
-	    // returns all the possible buckets this item overlaps in
-	    // NOTE: will return the actual arrays!!
-	    // NOTE THAT IT'S NO LonGER JUST THE ITEMS THIS OVErLAPS WITH - IT'S ACTUALLY
-	    // ALL THE BUCKETS THAT ARE WITHIN ITS MOVEABLE RADIUS!! this is because we
-	    // are now predicting/calculating the future value for where this will be!!!
-	
-	  }, {
-	    key: '_getBuckets',
-	    value: function _getBuckets(gob) {
-	      var xVel = gob.velocity.x * _private.Time.dts;
-	      var yVel = gob.velocity.y * _private.Time.dts;
-	
-	      var minX = gob._aabb[0].x;
-	      var maxX = gob._aabb[1].x;
-	      var minY = gob._aabb[0].y;
-	      var maxY = gob._aabb[3].y;
-	
-	      // if the x velocity is > 0, then don't need to add anything, the leftmost
-	      // corner is this object
-	      var l = Math.floor((minX + Math.min(xVel, 0)) / this.tileSize);
-	      // if the x velocity is < 0, then don't need to add anything, the rightmost
-	      // corner is this object
-	      var r = Math.floor((maxX + Math.max(xVel, 0)) / this.tileSize);
-	      // if the y velocity is < 0, then don't need to add anything, the topmost
-	      // corner is this object
-	      var t = Math.floor((minY + Math.min(yVel, 0)) / this.tileSize);
-	      // if the y velocity is > 0, then don't need to add anything, the topmost
-	      // corner is this object
-	      var b = Math.floor((maxY + Math.max(yVel, 0)) / this.tileSize);
-	
-	      var buckets = [];
-	      var bucketHash = void 0;
-	      for (var i = l; i <= r; i++) {
-	        for (var j = t; j <= b; j++) {
-	          bucketHash = this.bucketHash(i, j);
-	          // initialize bucket
-	          this.buckets[bucketHash] = this.buckets[bucketHash] || [];
-	          buckets.push(this.buckets[bucketHash]);
-	        }
-	      }
-	      return buckets;
-	    }
-	  }]);
-	
-	  return SpatialHash;
-	}();
-	
-	// assumes a default scheme for the bucket based on the default game object -
-	// position.x, position.y
-	
-	
-	function defaultBucketHash(x, y) {
-	  return x + '_' + y;
-	}
-	
-	exports.default = SpatialHash;
-
-/***/ },
-/* 187 */
-/***/ function(module, exports) {
-
-	'use strict';
-	
-	Object.defineProperty(exports, "__esModule", {
-	  value: true
-	});
-	
-	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-	
-	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-	
-	// a simple cache backed by an object
-	var ContactCache = function () {
-	  function ContactCache() {
-	    _classCallCheck(this, ContactCache);
-	
-	    this.cache = {};
-	  }
-	
-	  // TODO: revisit this API.
-	  // initialize the ContactCache with seed data
-	
-	
-	  _createClass(ContactCache, [{
-	    key: 'seed',
-	    value: function seed(gobs) {
-	      for (var i = 0; i < gobs.length; i++) {
-	        this.cache[gobs[i]._id] = {};
-	      }
-	    }
-	  }, {
-	    key: 'add',
-	    value: function add(gob) {
-	      this.cache[gob._id] = {};
-	    }
-	
-	    // mark an object as checked
-	
-	  }, {
-	    key: 'mark',
-	    value: function mark(gob1, gob2) {
-	      this.cache[gob1._id][gob2._id] = true;
-	    }
-	
-	    // see if a gob has already been checked
-	
-	  }, {
-	    key: 'checked',
-	    value: function checked(gob1, gob2) {
-	      return !this.cache[gob1._id][gob2._id] && !this.cache[gob2._id][gob1._id];
-	    }
-	  }, {
-	    key: 'free',
-	    value: function free() {
-	      this.cache = {};
-	    }
-	  }]);
-	
-	  return ContactCache;
-	}();
-	
-	exports.default = ContactCache;
-
-/***/ },
+/* 185 */,
+/* 186 */,
+/* 187 */,
 /* 188 */,
 /* 189 */,
 /* 190 */,
 /* 191 */,
 /* 192 */,
-/* 193 */
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
-	
-	Object.defineProperty(exports, "__esModule", {
-	  value: true
-	});
-	
-	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-	
-	var _public = __webpack_require__(183);
-	
-	var _key = __webpack_require__(194);
-	
-	var _key2 = _interopRequireDefault(_key);
-	
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-	
-	function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
-	
-	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-	
-	// there should be one canvas per game, one keyboard per game,
-	//       hence one canvas per keyboard
-	// Note: Keyboard should never have a reference to gob
-	var Keyboard = function () {
-	  // takes in the canvas?
-	  function Keyboard(opts) {
-	    var _handlerSets,
-	        _this = this;
-	
-	    _classCallCheck(this, Keyboard);
-	
-	    this.canvas = opts.canvas;
-	
-	    // holds the keys that have each of these handlers
-	    this.handlerSets = (_handlerSets = {}, _defineProperty(_handlerSets, _public.EVENTS.ONKEYDOWN, {
-	      // keyCode: 1
-	    }), _defineProperty(_handlerSets, _public.EVENTS.ONKEYUP, {}), _defineProperty(_handlerSets, _public.EVENTS.ONKEYHOLD, {}), _handlerSets);
-	
-	    this.keys = {
-	      // keyCode: new Key()
-	    };
-	
-	    // set up the event handlers
-	    this.canvas.addEventListener('keydown', function (evt) {
-	      // only execute the hold handlers if it's already down
-	      if (_this.keys[evt.keyCode].pressed) {
-	        _this.keys[evt.keyCode].keyHold();
-	      } else {
-	        _this.keys[evt.keyCode].keyDown();
-	      }
-	    });
-	
-	    this.canvas.addEventListener('keyup', function (evt) {
-	      _this.keys[evt.keyCode].keyUp();
-	    });
-	
-	    // initialize all of the Keys
-	    for (var k in _public.KEYS) {
-	      this.keys[_public.KEYS[k]] = new _key2.default(_public.KEYS[k]);
-	    }
-	  }
-	
-	  _createClass(Keyboard, [{
-	    key: 'isKeyPressed',
-	    value: function isKeyPressed(keyCode) {
-	      return this.keys[keyCode].pressed;
-	    }
-	
-	    // events comes in the form: {
-	    //  [eventType]: {
-	    //    [keyCode]: handlerFunc
-	    //  }
-	    // }
-	    // TODO: add events type
-	
-	  }, {
-	    key: 'addGobEventHandlers',
-	    value: function addGobEventHandlers(id, events) {
-	      for (var _eventType in events) {
-	        // $FlowFixMe: for in loops are broken: https://github.com/facebook/flow/issues/2970
-	        for (var _keyCodeId in events[_eventType]) {
-	          this.keys[_keyCodeId].processHandler(_eventType, id, events[_eventType][_keyCodeId]);
-	          // update the handlersets
-	          this.handlerSets[_eventType][_keyCodeId] = 1;
-	        }
-	      }
-	    }
-	
-	    // TODO: remove gob references, for on destroy
-	    // TODO: add events type
-	
-	  }, {
-	    key: 'removeGobEventHandlers',
-	    value: function removeGobEventHandlers(id, events) {
-	      for (var _eventType2 in events) {
-	        // $FlowFixMe: for in loops are broken: https://github.com/facebook/flow/issues/2970
-	        for (var keyCode in events[_eventType2]) {
-	          this.keys[keyCode].removeHandler(id, _eventType2);
-	          if (this.keys[keyCode].count === 0) {
-	            delete this.handlerSets[_eventType2][keyCode];
-	          }
-	        }
-	      }
-	    }
-	  }]);
-	
-	  return Keyboard;
-	}();
-	
-	exports.default = Keyboard;
-
-/***/ },
-/* 194 */
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
-	
-	Object.defineProperty(exports, "__esModule", {
-	  value: true
-	});
-	
-	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-	
-	var _public = __webpack_require__(183);
-	
-	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-	
-	var Key = function () {
-	  //
-	  function Key(keyCode) {
-	    _classCallCheck(this, Key);
-	
-	    this.keyCode = keyCode;
-	    this.pressed = false;
-	
-	    // all subscribed handlers
-	    this.keyHandlers = {}
-	    // [EventType]: {
-	    //   id: handlerFunc
-	    //   ...
-	    // },
-	    // ...
-	
-	
-	    // the number of handlers
-	    ;this.count = 0;
-	  }
-	
-	  _createClass(Key, [{
-	    key: 'processHandler',
-	    value: function processHandler(eventType, id, handler) {
-	      this.keyHandlers[eventType] = this.keyHandlers[eventType] || {};
-	      this.keyHandlers[eventType][id] = handler;
-	      this.count++;
-	    }
-	  }, {
-	    key: 'removeHandler',
-	    value: function removeHandler(eventType, id) {
-	      delete this.keyHandlers[eventType][id];
-	      this.count--;
-	    }
-	
-	    // should only be fired the first time it gets pressed, until the next time it gets pressed (after keyup)
-	    // assumes that the context is valid!
-	
-	  }, {
-	    key: 'keyDown',
-	    value: function keyDown(evt, context) {
-	      this.pressed = true;
-	      // assumes it's bound properly
-	      for (var id in this.keyHandlers[_public.EVENTS.ONKEYDOWN]) {
-	        this.keyHandlers[_public.EVENTS.ONKEYDOWN][id](evt);
-	      }
-	    }
-	
-	    // should only be fired 2nd time and beyond
-	
-	  }, {
-	    key: 'keyHold',
-	    value: function keyHold(evt, context) {
-	      // assumes it's bound properly
-	      for (var id in this.keyHandlers[_public.EVENTS.ONKEYHOLD]) {
-	        this.keyHandlers[_public.EVENTS.ONKEYHOLD][id](evt);
-	      }
-	    }
-	  }, {
-	    key: 'keyUp',
-	    value: function keyUp(evt, context) {
-	      this.pressed = false;
-	      // assumes it's bound properly
-	      for (var id in this.keyHandlers[_public.EVENTS.ONKEYUP]) {
-	        this.keyHandlers[_public.EVENTS.ONKEYUP][id](evt);
-	      }
-	    }
-	  }]);
-	
-	  return Key;
-	}();
-	
-	exports.default = Key;
-
-/***/ },
-/* 195 */
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
-	
-	Object.defineProperty(exports, "__esModule", {
-	  value: true
-	});
-	
-	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-	
-	var _gob = __webpack_require__(1);
-	
-	var _gob2 = _interopRequireDefault(_gob);
-	
-	var _spatialhash = __webpack_require__(186);
-	
-	var _spatialhash2 = _interopRequireDefault(_spatialhash);
-	
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-	
-	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-	
-	// a broad phase collision solver using spatial hashes
-	
-	var Spatial = function () {
-	  function Spatial(tileSize) {
-	    _classCallCheck(this, Spatial);
-	
-	    this.tileSize = tileSize;
-	    this.spatialHash = new _spatialhash2.default(this.tileSize);
-	  }
-	
-	  _createClass(Spatial, [{
-	    key: 'detectPotentialCollisions',
-	    value: function detectPotentialCollisions(changedGobs) {
-	      var ret = {};
-	
-	      for (var i = 0; i < changedGobs.length; i++) {
-	        ret[changedGobs[i]._id] = {
-	          gob: changedGobs[i],
-	          collisions: this.spatialHash.getPossibleGobs(changedGobs[i])
-	        };
-	      }
-	
-	      return ret;
-	    }
-	  }, {
-	    key: 'seed',
-	    value: function seed(gobs) {
-	      this.spatialHash.seed(gobs);
-	    }
-	  }, {
-	    key: 'empty',
-	    value: function empty() {
-	      this.spatialHash.empty();
-	    }
-	  }]);
-	
-	  return Spatial;
-	}();
-	
-	exports.default = Spatial;
-
-/***/ },
-/* 196 */
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
-	
-	Object.defineProperty(exports, "__esModule", {
-	  value: true
-	});
-	
-	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-	
-	var _vector = __webpack_require__(3);
-	
-	var _vector2 = _interopRequireDefault(_vector);
-	
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-	
-	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-	
-	// TODO: for now it assumes both gobs are convex
-	// returns null if no collision, otherwise returns MTV
-	// http://www.metanetsoftware.com/technique/tutorialA.html
-	function SAT(gob1, gob2) {
-	  // get the absolute vertices
-	  var vertices1 = gob1.getVertices();
-	  var vertices2 = gob2.getVertices();
-	
-	  // gather the normals
-	  var normals1 = gob1.getNormals();
-	  var normals2 = gob2.getNormals();
-	
-	  var MTV = new _vector2.default(-Infinity, -Infinity);
-	
-	  // for each normal, project both shapes onto the normal. if they don't
-	  // intersect, then immediately return false.
-	  // otherwise return true at the end
-	  for (var i = 0; i < normals1.length; i++) {
-	    // $invariant: MTV will never be null
-	    MTV = checkProjectionOverlap(vertices1, vertices2, normals1[i], MTV);
-	    if (MTV == null) {
-	      return null;
-	    }
-	  }
-	
-	  for (var _i = 0; _i < normals2.length; _i++) {
-	    // $invariant: MTV will never be null
-	    MTV = checkProjectionOverlap(vertices1, vertices2, normals2[_i], MTV);
-	    if (MTV == null) {
-	      return null;
-	    }
-	  }
-	
-	  // TODO: adjust the gobs here instead of in collision engine
-	  // resolveStaticCollision(gob1, gob2, MTV);
-	
-	  return MTV;
-	}
-	
-	// if it overlaps, return the projection vector
-	function checkProjectionOverlap(vertices1, vertices2, vector, MTV) {
-	  var min1 = Infinity;
-	  var max1 = -Infinity;
-	  var min2 = Infinity;
-	  var max2 = -Infinity;
-	  vertices1.map(function (vertex) {
-	    var val = _vector2.default.ProjectScalar(vertex, vector);
-	    min1 = Math.min(min1, val);
-	    max1 = Math.max(max1, val);
-	  });
-	
-	  vertices2.map(function (vertex) {
-	    var val = _vector2.default.ProjectScalar(vertex, vector);
-	    min2 = Math.min(min2, val);
-	    max2 = Math.max(max2, val);
-	  });
-	
-	  // no overlap
-	  if (min1 > max2 || max1 < min2) {
-	    return null;
-	  } else {
-	    // the magnitude of the overlap
-	    var newMTVMagnitude = Math.min(max2 - min1, max1 - min2);
-	    var vectorMag = vector.mag();
-	    // if the magnitude is smaller than the magnitude of the current mtv then we
-	    //    should update
-	    // the mtv with the new values
-	    if (newMTVMagnitude < MTV.mag()) {
-	      MTV.x = vector.x * newMTVMagnitude / vectorMag;
-	      MTV.y = vector.y * newMTVMagnitude / vectorMag;
-	    }
-	    return MTV;
-	  }
-	}
-	
-	var SATDetector = function () {
-	  function SATDetector() {
-	    _classCallCheck(this, SATDetector);
-	  }
-	
-	  _createClass(SATDetector, [{
-	    key: 'checkPotentialCollisions',
-	    value: function checkPotentialCollisions(potentialCollisions) {
-	      var allCollisions = [];
-	
-	      // TODO: check contact cache? or check it outside.
-	
-	      // for each id iterate through the array of gobs and check
-	
-	      var _loop = function _loop(_id) {
-	        // $invariant id doesn't get inferred on loops atm
-	        var collisionMap = potentialCollisions[_id];
-	        collisionMap.collisions.map(function (gob) {
-	          var MTV = SAT(collisionMap.gob, gob);
-	          if (MTV != null) {
-	            allCollisions.push([collisionMap.gob, gob, MTV]);
-	          }
-	        });
-	      };
-	
-	      for (var _id in potentialCollisions) {
-	        _loop(_id);
-	      }
-	
-	      return allCollisions;
-	    }
-	  }]);
-	
-	  return SATDetector;
-	}();
-	
-	exports.default = SATDetector;
-
-/***/ },
+/* 193 */,
+/* 194 */,
+/* 195 */,
+/* 196 */,
 /* 197 */
 /***/ function(module, exports, __webpack_require__) {
 

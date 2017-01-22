@@ -28,24 +28,10 @@ let game
 PIXI.loader.add('zelda', './assets/img/zelda.gif')
   .add('heart', './assets/img/heart.png')
   .load(function (loader, resources) {
-    // a = new PIXI.Container()
-    // for (var i=0; i<1000; i++) {
-    //   let sprite = new PIXI.Sprite(resources.zelda.texture)
-
-    //   sprite.position.set(Math.random() * renderer.view.width, Math.random() * renderer.view.height);
-    //   hearts.push(sprite)
-    //   a.addChild(sprite)
-    // }
 
     game = new Pew.Pool(renderer, {
       stage: new PIXI.Container(),
       showGrid: true
-    })
-
-    game.registerEventHandler('click', function(evt) {
-      if (this !== document.activeElement) {
-        canvas.focus()
-      }
     })
 
     game.createGob({
@@ -58,116 +44,6 @@ PIXI.loader.add('zelda', './assets/img/zelda.gif')
       velocity: new Pew.V2(0, 0),
       acceleration: new Pew.V2(0, 0),
       angle: 20,
-      debug: true,
-      data: {
-        sprite: new PIXI.Sprite(resources.heart.texture)
-      }
-    }, Pill)
-
-    game.createGob({
-      position: new Pew.V2(470, 400),
-      mass: 1,
-      bounce: 1,
-      friction: 0,
-      width: 20,
-      height: 20,
-      velocity: new Pew.V2(0, 0),
-      acceleration: new Pew.V2(0, 0),
-      angularVelocity: 20,
-      debug: true,
-      data: {
-        sprite: new PIXI.Sprite(resources.heart.texture)
-      }
-    }, Pill)
-
-    game.createGob({
-      position: new Pew.V2(400, 400),
-      mass: 1,
-      bounce: 1,
-      friction: 0,
-      width: 20,
-      height: 20,
-      velocity: new Pew.V2(0, 0),
-      acceleration: new Pew.V2(0, 0),
-      debug: true,
-      data: {
-        sprite: new PIXI.Sprite(resources.heart.texture)
-      }
-    }, Pill)
-
-    game.createGob({
-      position: new Pew.V2(400, 100),
-      mass: 1,
-      bounce: 1,
-      friction: 0,
-      width: 20,
-      height: 20,
-      velocity: new Pew.V2(100, 100),
-      acceleration: new Pew.V2(0, 0),
-      debug: true,
-      data: {
-        sprite: new PIXI.Sprite(resources.heart.texture)
-      }
-    }, Pill)
-
-    game.createGob({
-      position: new Pew.V2(500, 500),
-      mass: 1,
-      bounce: 1,
-      friction: 0,
-      width: 20,
-      height: 20,
-      velocity: new Pew.V2(10, 30),
-      angularVelocity: 1,
-      acceleration: new Pew.V2(0, 0),
-      debug: true,
-      data: {
-        sprite: new PIXI.Sprite(resources.heart.texture)
-      }
-    }, Pill)
-
-    game.createGob({
-      position: new Pew.V2(445.78, 132.15),
-      mass: 1,
-      bounce: 1,
-      friction: 0,
-      width: 20,
-      height: 20,
-      velocity: new Pew.V2(0, 0),
-      acceleration: new Pew.V2(0, 0),
-      debug: true,
-      data: {
-        sprite: new PIXI.Sprite(resources.heart.texture)
-      }
-    }, Pill)
-
-    game.createGob({
-      position: new Pew.V2(200, 200),
-      mass: 1,
-      bounce: 1,
-      friction: 0,
-      width: 20,
-      height: 20,
-      force: new Pew.V2(10, 10),
-      velocity: new Pew.V2(0, 0),
-      acceleration: new Pew.V2(0, 0),
-      debug: true,
-      data: {
-        sprite: new PIXI.Sprite(resources.heart.texture)
-      }
-    }, Pill)
-
-
-    game.createGob({
-      position: new Pew.V2(600, 600),
-      mass: 1,
-      bounce: 1,
-      friction: 0,
-      width: 20,
-      height: 20,
-      torque: 1,
-      velocity: new Pew.V2(0, 0),
-      acceleration: new Pew.V2(0, 0),
       debug: true,
       data: {
         sprite: new PIXI.Sprite(resources.heart.texture)
