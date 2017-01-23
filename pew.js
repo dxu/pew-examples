@@ -62,11 +62,16 @@
 	
 	var _vector2 = _interopRequireDefault(_vector);
 	
+	var _entry = __webpack_require__(198);
+	
+	var _entry2 = _interopRequireDefault(_entry);
+	
 	function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 	
 	window.Pew = {
+	  Collider: _entry2.default,
 	  Gob: _gob2.default,
 	  CONST: CONST,
 	  Pool: _pool2.default,
@@ -106,13 +111,9 @@
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 	
-	function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
-	
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 	
 	var Gob = function () {
-	
-	  // Rendering data
 	  // Non rigid bodies only!!
 	
 	  // TODO: should we even allow this
@@ -149,7 +150,6 @@
 	
 	    // default to no debug
 	    this.debug = opts.debug || false;
-	    this.refs = _defineProperty({}, game._id, game);
 	    this.game = game;
 	
 	    this.position = new _vector2.default(opts.position.x, opts.position.y);
@@ -175,6 +175,9 @@
 	
 	  // This is the method that is called invisibly to set up the rigidbody +
 	  // collider stuff
+	
+	
+	  // Rendering data
 	  // Non rigid bodies only!! the gob's INITIAL acceleration.
 	  // everything is derived from relativeVertices
 	
@@ -184,11 +187,14 @@
 	    value: function __init() {
 	      // if it has a collider defined, then we should create a Collider object -
 	      // and a body of that type of collider.
-	      if (this.collider) {
-	        this._body = this.collider.getMatterBody();
+	      if (this.constructor.collider) {
+	        this._body = this.constructor.collider(this);
+	        // both velocity and angular velocity are read-only, so we need to
+	        // initialize them here
+	        _matterJs2.default.Body.setVelocity(this._body, _matterJs2.default.Vector.create(this.velocity.x, this.velocity.y));
+	        _matterJs2.default.Body.setAngularVelocity(this._body, this.angularVelocity);
 	        // if it has no rigidbody property, then this should be considered a trigger
 	        if (!this.rigidBody) {
-	          console.log();
 	          this._body.isSensor = true;
 	        }
 	      }
@@ -205,14 +211,6 @@
 	    key: 'getNormals',
 	    value: function getNormals() {
 	      return this._normals;
-	    }
-	
-	    // add it as a ref
-	
-	  }, {
-	    key: '_addRef',
-	    value: function _addRef(ref) {
-	      this.refs[ref._id] = ref;
 	    }
 	  }, {
 	    key: '_setupDebug',
@@ -267,12 +265,24 @@
 	  }, {
 	    key: '_postCollisionUpdate',
 	    value: function _postCollisionUpdate() {
+	      this._updatePostCollisionAttributes();
 	      this.updateSprite();
 	      // TODO: ideally we shouldn't even have to run this check in production :(
 	      // if this.debug is set, turn on debug mode
 	      if (this.debug) {
 	        this._debug();
 	      }
+	    }
+	
+	    // update the rendered attributes
+	
+	  }, {
+	    key: '_updatePostCollisionAttributes',
+	    value: function _updatePostCollisionAttributes() {
+	      this.position.x = this._body.position.x * _private.Time.dts;
+	      this.position.y = this._body.position.y * _private.Time.dts;
+	
+	      this.angle = this._body.angle;
 	    }
 	
 	    // updates the sprite's position. Should be called after committing position
@@ -331,10 +341,6 @@
 	      // onCollide, the objects gets destroyed before the other objects get to use
 	      // it in their onCollide
 	      window.requestAnimationFrame(function () {
-	        for (var index in _this.refs) {
-	          _this.refs[index].removeGob(_this);
-	          delete _this.refs[index];
-	        }
 	
 	        // remove PIXI sprite from its parent
 	        _this.data.sprite.parent.removeChild(_this.data.sprite);
@@ -343,7 +349,6 @@
 	        delete _this._id;
 	        delete _this.data;
 	        delete _this.vertices;
-	        delete _this.refs;
 	        delete _this.position;
 	      });
 	      this._destroyed = true;
@@ -37849,6 +37854,8 @@
 	    this.stage = opts.stage;
 	
 	    this.engine = _matterJs2.default.Engine.create();
+	    this.engine.world.gravity.x = 0;
+	    this.engine.world.gravity.y = 0;
 	    this._drawFPS();
 	    this._drawGrid(opts.showGrid);
 	  }
@@ -37907,11 +37914,17 @@
 	
 	      var gob = new GobClass(this, opts);
 	      gob.__init();
+	
 	      // if it contains a collider, we need to put it into the collision engine,
 	      // regardless whether or not it is a rigid body
 	      if (gob._body != null) {
 	        _matterJs2.default.World.add(this.engine.world, gob._body);
 	      }
+	
+	      // add the sprite to the stage
+	      this.stage.addChild(gob.data.sprite);
+	
+	      this.gobs.push(gob);
 	    }
 	
 	    // TODO: test this method
@@ -37954,7 +37967,9 @@
 	
 	      // TODO: Refactor this + above
 	      for (var i = 0; i < this.gobs.length; i++) {
-	        this.gobs[i]._postCollisionUpdate();
+	        if (this.gobs[i].constructor.collider) {
+	          this.gobs[i]._postCollisionUpdate();
+	        }
 	      }
 	
 	      //
@@ -47969,6 +47984,65 @@
 	
 	},{"../body/Composite":2,"../core/Common":14,"../core/Events":16,"../geometry/Bounds":26,"../geometry/Vector":28}]},{},[30])(30)
 	});
+
+/***/ },
+/* 198 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+	
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+	
+	var _box = __webpack_require__(199);
+	
+	var _box2 = _interopRequireDefault(_box);
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+	
+	exports.default = {
+	  Box: _box2.default
+	};
+
+/***/ },
+/* 199 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+	
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+	exports.default = BoxCollider;
+	
+	var _matterJs = __webpack_require__(197);
+	
+	var _matterJs2 = _interopRequireDefault(_matterJs);
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+	
+	// implements Collider interface
+	function BoxCollider(gob) {
+	  var vertices = [
+	  // TL
+	  _matterJs2.default.Vector.create(gob.position.x - gob.width / 2, gob.position.y - gob.height / 2),
+	  // TR
+	  _matterJs2.default.Vector.create(gob.position.x + gob.width / 2, gob.position.y - gob.height / 2),
+	  // BR
+	  _matterJs2.default.Vector.create(gob.position.x + gob.width / 2, gob.position.y + gob.height / 2),
+	  // BL
+	  _matterJs2.default.Vector.create(gob.position.x - gob.width / 2, gob.position.y + gob.height / 2)];
+	  // create the collider from the width + height
+	  // Note that velocity and angularVelocity are read-only! they need to be
+	  // initialized by gob
+	  return _matterJs2.default.Body.create({
+	    angle: gob.angle,
+	    mass: gob.mass,
+	    position: _matterJs2.default.Vector.create(gob.position.x, gob.position.y),
+	    vertices: vertices
+	  });
+	}
 
 /***/ }
 /******/ ]);

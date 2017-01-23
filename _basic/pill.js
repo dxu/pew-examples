@@ -36,3 +36,5 @@ class Pill extends Pew.Gob {
     }
   }
 }
+
+Pill.collider = Pew.Collider.Box;
