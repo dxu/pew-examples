@@ -1,17 +1,20 @@
 // extends basic gob
 class Pill extends Pew.Gob {
-  constructor(game, opts) {
-    opts.width = opts.width || 10
-    opts.height = opts.height || 10
-    super(game, opts)
+  constructor() {
+    super();
+    this.sprite = {
+      width: 20,
+      height: 20,
+      path: './assets/img/heart.png',
+    }
+    this.collider = new Pew.Colliders.Box(this, 20, 20)
 
-    // this.maxVelocity =
-    //   new Pew.Vector2(
-    //     (Math.round(Math.random()) * 2 - 1) * Math.random() * 3,
-    //     (Math.round(Math.random()) * 2 - 1) * Math.random() * 3
-    //   )
-
-    // this.velocity = this.maxVelocity
+    this.rigidbody = {
+      mass: 1,
+      friction: 0,
+      velocity: new Pew.V2(30, 0),
+      angularVelocity: 10,
+    }
   }
   onCollide(gob) {
     // if (gob instanceof Pill) {
@@ -37,4 +40,4 @@ class Pill extends Pew.Gob {
   }
 }
 
-Pill.collider = Pew.Collider.Box;
+Pill.spritePath = './assets/img/heart.png';
