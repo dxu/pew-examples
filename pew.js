@@ -143,10 +143,14 @@
 	      scale: new _vector2.default(1, 1),
 	      angle: 0
 	    };
+	    this.depth = 0;
 	  }
 	
 	  // This is the method that is called invisibly to set up the rigidbody +
 	  // collider stuff
+	
+	
+	  // depth of the sprite. Can be calculated as an explicit number, or a function
 	
 	
 	  _createClass(Gob, [{
@@ -216,7 +220,7 @@
 	    value: function __initSprite() {
 	      var opts = this.__opts;
 	      // set up default sprite attributes
-	      if (this.sprite == null || this.sprite.path == null) {
+	      if (this.sprite == null || this.sprite.constructor.spritePath == null) {
 	        throw new Error('Invalid game object created. No sprite path provided');
 	      }
 	      this.sprite.pixi = new PIXI.Sprite(this.game.resources[this.constructor.name].texture);
@@ -47912,6 +47916,14 @@
 	          this.gobs[_i2].postPhysicsUpdate();
 	        }
 	      }
+	      // for each gob, calculate their new depth.
+	      this.gobs.map(function (gob) {
+	        gob.sprite.pixi.zDepth = typeof gob.depth === "function" ? gob.depth() : gob.sprite.pixi.zDepth = gob.depth;
+	      });
+	
+	      this.stage.children.sort(function (sprite) {
+	        return sprite.zDepth;
+	      });
 	
 	      //
 	      // TODO: physics responses

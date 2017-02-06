@@ -5,7 +5,6 @@ class Pill extends Pew.Gob {
     this.sprite = {
       width: 20,
       height: 20,
-      path: './assets/img/heart.png',
     }
     this.collider = new Pew.Colliders.Box(this, 20, 20)
 
