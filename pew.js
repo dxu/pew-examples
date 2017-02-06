@@ -220,7 +220,7 @@
 	    value: function __initSprite() {
 	      var opts = this.__opts;
 	      // set up default sprite attributes
-	      if (this.sprite == null || this.sprite.constructor.spritePath == null) {
+	      if (this.sprite == null || this.constructor.spritePath == null) {
 	        throw new Error('Invalid game object created. No sprite path provided');
 	      }
 	      this.sprite.pixi = new PIXI.Sprite(this.game.resources[this.constructor.name].texture);
@@ -236,8 +236,8 @@
 	          this.sprite.anchor.x = opts.sprite.anchor.x;
 	          this.sprite.anchor.y = opts.sprite.anchor.y;
 	        }
-	        this.__updateSprite();
 	      }
+	      this.__updateSprite();
 	    }
 	  }, {
 	    key: '__onGameLoaded',
@@ -47916,13 +47916,16 @@
 	          this.gobs[_i2].postPhysicsUpdate();
 	        }
 	      }
+	
+	      // TODO: can optimize here.
 	      // for each gob, calculate their new depth.
 	      this.gobs.map(function (gob) {
 	        gob.sprite.pixi.zDepth = typeof gob.depth === "function" ? gob.depth() : gob.sprite.pixi.zDepth = gob.depth;
 	      });
 	
-	      this.stage.children.sort(function (sprite) {
-	        return sprite.zDepth;
+	      // sort by the new z depth
+	      this.stage.children.sort(function (sprite1, sprite2) {
+	        return sprite1.zDepth > sprite2.zDepth;
 	      });
 	
 	      //

@@ -30,8 +30,15 @@ let game
       canvas: canvas,
     })
 
-    game.preload(Pill)
+    game.preload(Pill, Zelda)
 
+    game.createGob({
+      transform: {
+        position: new Pew.V2(440, 399),
+        angle: 20,
+      },
+      debug: true,
+    }, Zelda)
     game.createGob({
       transform: {
         position: new Pew.V2(440, 400),
@@ -42,6 +49,7 @@ let game
       },
       debug: true,
     }, Pill)
+
 
     animate();
 // });

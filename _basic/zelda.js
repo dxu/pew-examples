@@ -1,23 +1,22 @@
 // extends basic gob
-class Pill extends Pew.Gob {
+class Zelda extends Pew.Gob {
   constructor() {
     super();
     this.sprite = {
       width: 20,
       height: 20,
     }
-    this.collider = new Pew.Colliders.Box(this, 20, 20)
-
-    this.rigidbody = {
-      mass: 1,
-      friction: 0,
-      velocity: new Pew.V2(30, 0),
-      angularVelocity: 10,
-    }
-
     this.depth = () => {
       return this.transform.position.y
     }
+    // this.collider = new Pew.Colliders.Box(this, 20, 20)
+
+    // this.rigidbody = {
+    //   mass: 1,
+    //   friction: 0,
+    //   velocity: new Pew.V2(30, 0),
+    //   angularVelocity: 10,
+    // }
   }
   onCollide(gob) {
     // if (gob instanceof Pill) {
@@ -43,4 +42,4 @@ class Pill extends Pew.Gob {
   }
 }
 
-Pill.spritePath = './assets/img/heart.png';
+Zelda.spritePath = './assets/img/zelda.gif';
