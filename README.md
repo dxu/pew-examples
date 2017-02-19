@@ -1,3 +1,2 @@
-# examples
+# DEPRECATED. Please see [pew.js](https://github.com/dxu/pew) for the latest examples.
 
-A repository of examples for [pew](https://github.com/apophanystudios/pew).
